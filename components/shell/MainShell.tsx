@@ -7,6 +7,7 @@ import { ChartPie, House, Plus, ReceiptText, UserRound } from "lucide-react";
 import { deleteTransaction, getHousehold, restoreTransaction, type HouseholdMeta, type Transaction } from "@/lib/db";
 import { useLookups, type Lookups } from "@/lib/data";
 import { QuickAdd } from "@/components/QuickAdd";
+import { CategoriesScreen, type CategoriesRequest } from "@/components/categories/CategoriesScreen";
 import { HomeView } from "@/components/views/HomeView";
 import { TransactionsView } from "@/components/views/TransactionsView";
 import { StatsView } from "@/components/views/StatsView";
@@ -22,6 +23,7 @@ type Shell = {
   setOffset: (n: number) => void;
   openAdd: () => void;
   openEdit: (t: Transaction) => void;
+  openCategories: () => void;
   remove: (id: string) => void;
   lookups: Lookups;
   household: HouseholdMeta | null;
@@ -47,6 +49,7 @@ export function MainShell({ session }: { session: Session | null }) {
   const [offset, setOffset] = useState(0);
   const [sheet, setSheet] = useState<{ editing: Transaction | null } | null>(null);
   const [undo, setUndo] = useState<{ id: string; key: number } | null>(null);
+  const [catReq, setCatReq] = useState<CategoriesRequest | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const lookups = useLookups();
@@ -78,6 +81,7 @@ export function MainShell({ session }: { session: Session | null }) {
       tab, setTab, offset, setOffset,
       openAdd: () => setSheet({ editing: null }),
       openEdit: (t) => setSheet({ editing: t }),
+      openCategories: () => setCatReq({ kind: "expense" }),
       remove, lookups, household, session,
     }),
     [tab, setTab, offset, remove, lookups, household, session]
@@ -127,11 +131,13 @@ export function MainShell({ session }: { session: Session | null }) {
         editing={sheet?.editing ?? null}
         onClose={() => setSheet(null)}
         onSaved={onSaved}
+        onNewCategory={(kind, done) => setCatReq({ kind, startNew: true, onCreated: done })}
         defaultPayer={household?.memberId ?? null}
         members={lookups.members}
         accounts={lookups.accounts}
         categories={lookups.categories}
       />
+      <CategoriesScreen request={catReq} categories={lookups.categories} onClose={() => setCatReq(null)} />
     </ShellCtx.Provider>
   );
 }

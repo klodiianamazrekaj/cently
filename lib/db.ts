@@ -93,6 +93,22 @@ db.version(2)
     }
   });
 
+// v3: categories can have their own colour (Kategoritë). No new index, just the field.
+db.version(3)
+  .stores({
+    members: "id, synced",
+    accounts: "id, synced",
+    categories: "id, parentId, kind, synced",
+    transactions: "id, occurredAt, kind, categoryId, paidByMember, synced",
+    budgets: "id, [categoryId+month], month, synced",
+    meta: "key",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("categories").toCollection().modify((c: Partial<Category>) => {
+      if (c.color === undefined) c.color = null;
+    });
+  });
+
 export const uid = () => crypto.randomUUID();
 
 // ---- Household and sync settings stored on this phone ----
@@ -153,12 +169,12 @@ export async function ensureSeed() {
     let order = 0;
     for (const g of SEED) {
       const gid = uid();
-      await db.categories.add({ id: gid, parentId: null, name: g.group, icon: g.icon, kind: "expense", sortOrder: order++, ...base });
+      await db.categories.add({ id: gid, parentId: null, name: g.group, icon: g.icon, color: null, kind: "expense", sortOrder: order++, ...base });
       for (const s of g.subs) {
-        await db.categories.add({ id: uid(), parentId: gid, name: s, icon: g.icon, kind: "expense", sortOrder: order++, ...base });
+        await db.categories.add({ id: uid(), parentId: gid, name: s, icon: g.icon, color: null, kind: "expense", sortOrder: order++, ...base });
       }
     }
-    await db.categories.add({ id: uid(), parentId: null, name: "Rroga", icon: "wallet", kind: "income", sortOrder: order++, ...base });
+    await db.categories.add({ id: uid(), parentId: null, name: "Rroga", icon: "salary", color: "lime", kind: "income", sortOrder: order++, ...base });
   });
 }
 
@@ -185,5 +201,57 @@ export async function deleteTransaction(id: string) {
 
 export async function restoreTransaction(id: string) {
   await db.transactions.update(id, { deletedAt: null, updatedAt: Date.now(), synced: 0 });
+  changed();
+}
+
+// ---- Categories ----
+
+const touched = () => ({ updatedAt: Date.now(), synced: 0 as const });
+
+export async function createCategory(fields: Pick<Category, "parentId" | "name" | "icon" | "color" | "kind">) {
+  const all = await db.categories.toArray();
+  const sortOrder = all.reduce((m, c) => Math.max(m, c.sortOrder), -1) + 1;
+  const row: Category = { ...fields, id: uid(), sortOrder, deletedAt: null, ...touched() };
+  await db.categories.add(row);
+  changed();
+  return row;
+}
+
+export async function updateCategory(id: string, patch: Partial<Pick<Category, "name" | "icon" | "color" | "sortOrder">>) {
+  await db.categories.update(id, { ...patch, ...touched() });
+  changed();
+}
+
+// Saves a new order for a list of sibling categories.
+export async function setCategoryOrder(ids: string[]) {
+  await db.transaction("rw", db.categories, async () => {
+    for (let i = 0; i < ids.length; i++) {
+      const c = await db.categories.get(ids[i]);
+      if (c && c.sortOrder !== i) await db.categories.update(ids[i], { sortOrder: i, ...touched() });
+    }
+  });
+  changed();
+}
+
+// How many expenses use these categories.
+export async function categoryUsage(ids: string[]) {
+  if (!ids.length) return 0;
+  return db.transactions.where("categoryId").anyOf(ids).filter((t) => !t.deletedAt).count();
+}
+
+// Soft delete. A subcategory's expenses move to its parent. A category's expenses (and its
+// subcategories' expenses) move to moveTo, or lose their category when moveTo is null.
+export async function deleteCategory(id: string, moveTo: string | null = null) {
+  const cat = await db.categories.get(id);
+  if (!cat) return;
+  await db.transaction("rw", db.categories, db.transactions, async () => {
+    const subs = cat.parentId ? [] : await db.categories.where("parentId").equals(id).toArray();
+    const ids = [id, ...subs.map((s) => s.id)];
+    const target = cat.parentId ?? moveTo;
+    const now = Date.now();
+    const txs = await db.transactions.where("categoryId").anyOf(ids).filter((t) => !t.deletedAt).toArray();
+    for (const t of txs) await db.transactions.update(t.id, { categoryId: target, updatedAt: now, synced: 0 });
+    for (const cid of ids) await db.categories.update(cid, { deletedAt: now, updatedAt: now, synced: 0 });
+  });
   changed();
 }

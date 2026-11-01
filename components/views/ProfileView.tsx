@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Cloud, CloudOff, Copy, LogIn, LogOut, RefreshCw, Share2 } from "lucide-react";
+import { Check, ChevronRight, Cloud, CloudOff, Copy, LogIn, LogOut, RefreshCw, Share2, Tags } from "lucide-react";
 import { authMessage, displayName } from "@/lib/auth";
 import { createInvite, signOutAndClear, syncNow, useSyncState } from "@/lib/sync";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +11,7 @@ import authStyles from "@/components/auth/auth.module.css";
 import s from "./ui.module.css";
 
 export function ProfileView() {
-  const { lookups, household, session } = useShell();
+  const { lookups, household, session, openCategories } = useShell();
   const sync = useSyncState();
   const [invite, setInvite] = useState<{ memberId: string; code: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -58,6 +58,17 @@ export function ProfileView() {
           <span>Hyr përsëri</span>
         </button>
       )}
+
+      <p className={s.sectionLabel}>Të dhënat</p>
+      <ul className={s.list}>
+        <li>
+          <button className={`${s.row} press`} onClick={openCategories}>
+            <span className={s.rowIcon}><Tags size={17} strokeWidth={2} /></span>
+            <span className={`${s.rowTitle} ${s.grow}`}>Kategoritë</span>
+            <ChevronRight size={16} strokeWidth={2} className={s.chev} />
+          </button>
+        </li>
+      </ul>
 
       {household && (
         <>

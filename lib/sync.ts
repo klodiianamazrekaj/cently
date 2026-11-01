@@ -36,8 +36,8 @@ const TABLES: TableDef[] = [
   },
   {
     local: "categories",
-    toRemote: (r, hid) => ({ id: r.id, household_id: hid, parent_id: r.parentId ?? null, name: r.name, icon: r.icon, kind: r.kind, sort_order: r.sortOrder, updated_at: iso(r.updatedAt as number), deleted_at: iso(r.deletedAt as number | null) }),
-    fromRemote: (r) => ({ id: r.id, parentId: r.parent_id ?? null, name: r.name, icon: r.icon, kind: r.kind, sortOrder: r.sort_order, updatedAt: ms(r.updated_at), deletedAt: ms(r.deleted_at) }),
+    toRemote: (r, hid) => ({ id: r.id, household_id: hid, parent_id: r.parentId ?? null, name: r.name, icon: r.icon, color: r.color ?? null, kind: r.kind, sort_order: r.sortOrder, updated_at: iso(r.updatedAt as number), deleted_at: iso(r.deletedAt as number | null) }),
+    fromRemote: (r) => ({ id: r.id, parentId: r.parent_id ?? null, name: r.name, icon: r.icon, color: r.color ?? null, kind: r.kind, sortOrder: r.sort_order, updatedAt: ms(r.updated_at), deletedAt: ms(r.deleted_at) }),
   },
   {
     local: "transactions",
@@ -93,11 +93,20 @@ async function push(hid: string) {
     if (t.local === "categories") rows = rows.sort((a, b) => Number(!!a.parentId) - Number(!!b.parentId));
     for (let i = 0; i < rows.length; i += 200) {
       const batch = rows.slice(i, i + 200);
-      const { error } = await supabase.from(t.local).upsert(batch.map((r) => t.toRemote(r, hid)), { onConflict: "id" });
+      const payload = batch.map((r) => t.toRemote(r, hid));
+      let { error } = await supabase.from(t.local).upsert(payload, { onConflict: "id" });
+      let withoutColor = false;
+      if (error && t.local === "categories" && /color/i.test(error.message)) {
+        // The color column comes from migration 20261102000000_category_color.sql. Until it has
+        // been run, keep syncing without it; rows with a colour stay pending and go up afterwards.
+        withoutColor = true;
+        ({ error } = await supabase.from(t.local).upsert(payload.map(({ color: _c, ...rest }) => rest), { onConflict: "id" }));
+      }
       if (error) throw new Error(`${t.local}: ${error.message}`);
       // Mark as synced only if nothing changed on the phone while we were sending.
       await db.transaction("rw", db.table(t.local), async () => {
         for (const r of batch) {
+          if (withoutColor && r.color) continue;
           await db.table(t.local).where("id").equals(r.id as string).and((x: Row) => x.updatedAt === r.updatedAt).modify({ synced: 1 });
         }
       });

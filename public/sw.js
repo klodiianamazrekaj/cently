@@ -1,5 +1,5 @@
 // Cently service worker: app shell offline, network first for pages, cache first for static assets.
-const VERSION = "cently-v10";
+const VERSION = "cently-v11";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
