@@ -242,7 +242,7 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
 
       <DateSheet open={calendar} value={new Date(when)} onSelect={setDay} onClose={() => setCalendar(false)} />
 
-      <button className={`${s.save} press`} disabled={!canSave} onClick={save}>
+      <button className={`${s.save} press`} disabled={!canSave} onClick={save} data-save>
         {cents === 0 ? "Shkruaj shumën" : !groupId ? "Zgjidh kategorinë" : editing ? "Ruaj ndryshimet" : `Ruaj ${label}`}
       </button>
     </div>

@@ -5,7 +5,6 @@ import { Pencil, Trash2 } from "lucide-react";
 import s from "./SwipeRow.module.css";
 
 const ACTIONS_W = 152; // two buttons of 76px
-export const SWIPED_KEY = "cently.swiped";
 
 type Props = {
   open: boolean;
@@ -65,10 +64,6 @@ export function SwipeRow({ open, onOpenChange, onTap, onEdit, onDelete, children
       setX(shouldOpen ? -ACTIONS_W : 0);
       onOpenChange(shouldOpen);
       if (shouldOpen && navigator.vibrate) navigator.vibrate(8);
-      if (shouldOpen) {
-        try { localStorage.setItem(SWIPED_KEY, "1"); } catch {}
-        window.dispatchEvent(new Event(SWIPED_KEY));
-      }
       return;
     }
     if (st.axis === null) {

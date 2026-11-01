@@ -26,6 +26,7 @@ export interface Category extends Syncable {
   parentId: string | null;
   name: string;
   icon: string;
+  color?: string | null; // a name from CAT_COLORS (lib/categoryStyle.ts); null = chosen by icon
   kind: "expense" | "income";
   sortOrder: number;
 }

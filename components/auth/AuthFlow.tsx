@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Eye, EyeOff, MailCheck, Users, WifiOff, X, Zap } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, X } from "lucide-react";
 import {
   authMessage, clearRecovery, confirmWithCode, resendConfirmation, resetWithCode,
   sendPasswordReset, setNewPassword, signIn, signUp,
@@ -64,18 +64,13 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
       {step === "welcome" && (
         <div className={`${s.welcome} rise`}>
           <div className={s.brand}>
-            <span className={s.markWrap}><Mark size={84} /></span>
+            <span className={s.markWrap}><Mark size={64} /></span>
             <span className={s.wordmark}>cently</span>
             <p className={s.tagline}>Çdo cent, bashkë.</p>
           </div>
-          <ul className={s.points}>
-            <li><span><Zap size={18} strokeWidth={2} /></span>Shto një shpenzim në pak sekonda</li>
-            <li><span><Users size={18} strokeWidth={2} /></span>Të dy shihni të njëjtat shifra, live</li>
-            <li><span><WifiOff size={18} strokeWidth={2} /></span>Punon edhe pa internet</li>
-          </ul>
           <div className={s.actions}>
             <button className={`${s.primary} press`} onClick={() => go("signup")}>Krijo llogari</button>
-            <button className={`${s.ghost} press`} onClick={() => go("login")}>Kam llogari, hyr</button>
+            <button className={`${s.ghost} press`} onClick={() => go("login")}>Hyr</button>
           </div>
         </div>
       )}
@@ -88,16 +83,15 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
             if (r === "confirm") { setFrom("signup"); go("verify"); } else onDone?.();
           });
         }}>
-          <h1 className={s.h1}>Krijo llogarinë</h1>
-          <p className={s.lead}>Vetëm disa sekonda. Pastaj ftoni njëri-tjetrin.</p>
+          <h1 className={s.h1}>Llogari e re</h1>
           <Field label="Emri" value={name} onChange={setName} autoComplete="given-name" placeholder="Klodiana" autoFocus />
           <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="emri@shembull.com" />
-          <PasswordField label="Fjalëkalimi" value={password} onChange={setPassword} autoComplete="new-password" hint={password && !pwOk ? "Të paktën 8 shkronja" : undefined} />
+          <PasswordField label="Fjalëkalimi" value={password} onChange={setPassword} autoComplete="new-password" hint={password && !pwOk ? "Të paktën 8 shenja" : undefined} />
           {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || !name.trim() || !email.includes("@") || !pwOk}>
-            {busy ? "Duke krijuar…" : "Krijo llogarinë"}
+            {busy ? "Duke krijuar…" : "Vazhdo"}
           </button>
-          <p className={s.switch}>Ke llogari? <button type="button" onClick={() => go("login")}>Hyr</button></p>
+          
         </form>
       )}
 
@@ -110,21 +104,19 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
           });
         }}>
           <h1 className={s.h1}>Mirë se u ktheve</h1>
-          <p className={s.lead}>Hyr me email-in dhe fjalëkalimin tënd.</p>
           <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="emri@shembull.com" autoFocus />
           <PasswordField label="Fjalëkalimi" value={password} onChange={setPassword} autoComplete="current-password" />
-          <button type="button" className={s.forgot} onClick={() => go("forgot")}>Ke harruar fjalëkalimin?</button>
+          <button type="button" className={s.forgot} onClick={() => go("forgot")}>Harrove fjalëkalimin?</button>
           {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || !email.includes("@") || !password}>{busy ? "Duke hyrë…" : "Hyr"}</button>
-          {!onCancel && <p className={s.switch}>S&apos;ke llogari? <button type="button" onClick={() => go("signup")}>Krijo një</button></p>}
+          
         </form>
       )}
 
       {step === "verify" && (
         <form className={`${s.form} rise`} onSubmit={(e) => { e.preventDefault(); run(async () => { await confirmWithCode(email, code); onDone?.(); }); }}>
-          <span className={s.bigIcon}><MailCheck size={28} strokeWidth={1.75} /></span>
           <h1 className={s.h1}>Konfirmo email-in</h1>
-          <p className={s.lead}>Të dërguam një email te <b>{email}</b>. Shkruaj kodin nga email-i, ose hape linkun dhe kthehu këtu.</p>
+          <p className={s.lead}>Kodi u dërgua te <b>{email}</b>.</p>
           <input
             className={`${s.input} ${s.code}`}
             inputMode="numeric"
@@ -144,14 +136,13 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
             if (r === "confirm") setError("Email-i nuk është konfirmuar ende. Hape linkun në email ose shkruaj kodin.");
             else onDone?.();
           })}>E hapa linkun, vazhdo</button>
-          <p className={s.switch}>Nuk erdhi? Shiko te Spam, ose <button type="button" disabled={busy} onClick={() => run(async () => { await resendConfirmation(email); setNotice("U dërgua përsëri."); })}>dërgoje përsëri</button></p>
+          <p className={s.switch}>Nuk erdhi? <button type="button" disabled={busy} onClick={() => run(async () => { await resendConfirmation(email); setNotice("U dërgua përsëri."); })}>dërgoje përsëri</button></p>
         </form>
       )}
 
       {step === "forgot" && (
         <form className={`${s.form} rise`} onSubmit={(e) => { e.preventDefault(); run(async () => { await sendPasswordReset(email); go("reset"); }); }}>
           <h1 className={s.h1}>Rivendos fjalëkalimin</h1>
-          <p className={s.lead}>Shkruaj email-in dhe do të të dërgojmë një kod.</p>
           <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="emri@shembull.com" autoFocus />
           {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || !email.includes("@")}>{busy ? "Duke dërguar…" : "Dërgo kodin"}</button>
@@ -161,7 +152,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
       {step === "reset" && (
         <form className={`${s.form} rise`} onSubmit={(e) => { e.preventDefault(); run(async () => { await resetWithCode(email, code, newPw); onDone?.(); }); }}>
           <h1 className={s.h1}>Fjalëkalim i ri</h1>
-          <p className={s.lead}>Shkruaj kodin që të dërguam te <b>{email}</b> dhe zgjidh një fjalëkalim të ri.</p>
+          <p className={s.lead}>Kodi u dërgua te <b>{email}</b>.</p>
           <input
             className={`${s.input} ${s.code}`}
             inputMode="numeric"
@@ -173,7 +164,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
             aria-label="Kodi"
             autoFocus
           />
-          <PasswordField label="Fjalëkalimi i ri" value={newPw} onChange={setNewPw} autoComplete="new-password" hint={newPw && newPw.length < 8 ? "Të paktën 8 shkronja" : undefined} />
+          <PasswordField label="Fjalëkalimi i ri" value={newPw} onChange={setNewPw} autoComplete="new-password" hint={newPw && newPw.length < 8 ? "Të paktën 8 shenja" : undefined} />
           {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || code.length < 6 || newPw.length < 8}>{busy ? "Duke ruajtur…" : "Ruaj dhe hyr"}</button>
         </form>
@@ -182,8 +173,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
       {step === "newPassword" && (
         <form className={`${s.form} rise`} onSubmit={(e) => { e.preventDefault(); run(async () => { await setNewPassword(newPw); clearRecovery(); onDone?.(); }); }}>
           <h1 className={s.h1}>Fjalëkalim i ri</h1>
-          <p className={s.lead}>Zgjidh fjalëkalimin e ri për llogarinë tënde.</p>
-          <PasswordField label="Fjalëkalimi i ri" value={newPw} onChange={setNewPw} autoComplete="new-password" hint={newPw && newPw.length < 8 ? "Të paktën 8 shkronja" : undefined} />
+          <PasswordField label="Fjalëkalimi i ri" value={newPw} onChange={setNewPw} autoComplete="new-password" hint={newPw && newPw.length < 8 ? "Të paktën 8 shenja" : undefined} />
           {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || newPw.length < 8}>{busy ? "Duke ruajtur…" : "Ruaj"}</button>
         </form>

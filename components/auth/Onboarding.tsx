@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Home, KeyRound, ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { authMessage, displayName } from "@/lib/auth";
 import { adoptHousehold, createHousehold, findMyHousehold, joinWithCode, signOutAndClear } from "@/lib/sync";
@@ -79,21 +79,18 @@ export function Onboarding({ session }: { session: Session }) {
 
       {step === "choose" && (
         <div className={`${s.form} rise`}>
-          <div className={s.pair}>
-            {members.map((m) => <span key={m.id} data-color={m.color}>{m.name.charAt(0)}</span>)}
-          </div>
           <h1 className={s.h1}>Mirë se erdhe{myName ? `, ${myName}` : ""}</h1>
-          <p className={s.lead}>Cently punon më mirë me dy. Njëri krijon shtëpinë, tjetri bashkohet me kod.</p>
-          <button className={`${s.choiceCard} press`} onClick={() => setStep("create")}>
-            <span className={s.choiceIcon} data-tone="lime"><Home size={22} strokeWidth={2} /></span>
-            <span className={s.choiceText}><b>Krijo shtëpinë tonë</b><span>Je i pari nga ju të dy</span></span>
-            <ChevronRight size={20} strokeWidth={2} />
-          </button>
-          <button className={`${s.choiceCard} press`} onClick={() => setStep("join")}>
-            <span className={s.choiceIcon} data-tone="ink"><KeyRound size={22} strokeWidth={2} /></span>
-            <span className={s.choiceText}><b>Kam një kod ftese</b><span>Partneri të ka ftuar tashmë</span></span>
-            <ChevronRight size={20} strokeWidth={2} />
-          </button>
+          <p className={s.lead}>Njëri krijon shtëpinë, tjetri bashkohet me kod.</p>
+          <div className={s.choices}>
+            <button className={`${s.choice} press`} onClick={() => setStep("create")}>
+              <span className={s.choiceText}><b>Krijo shtëpinë</b><span>Je i pari</span></span>
+              <ChevronRight size={18} strokeWidth={2} />
+            </button>
+            <button className={`${s.choice} press`} onClick={() => setStep("join")}>
+              <span className={s.choiceText}><b>Kam një kod</b><span>Partneri të ka ftuar</span></span>
+              <ChevronRight size={18} strokeWidth={2} />
+            </button>
+          </div>
           {error && <p className={s.error} role="alert">{error}</p>}
         </div>
       )}
@@ -101,7 +98,7 @@ export function Onboarding({ session }: { session: Session }) {
       {step === "create" && (
         <form className={`${s.form} rise`} onSubmit={(e) => { e.preventDefault(); create(); }}>
           <h1 className={s.h1}>Shtëpia juaj</h1>
-          <p className={s.lead}>Shpenzimet që ke shtuar në këtë telefon ruhen dhe kalojnë në shtëpinë e re.</p>
+          <p className={s.lead}>Shpenzimet në këtë telefon ruhen.</p>
           <label className={s.field}>
             <span className={s.label}>Emri yt</span>
             <input className={s.input} value={myName} onChange={(e) => setMyName(e.target.value)} autoComplete="given-name" />
@@ -118,7 +115,7 @@ export function Onboarding({ session }: { session: Session }) {
       {step === "join" && (
         <form className={`${s.form} rise`} onSubmit={(e) => { e.preventDefault(); run(() => joinWithCode(code, session.user.id)); }}>
           <h1 className={s.h1}>Kodi i ftesës</h1>
-          <p className={s.lead}>Partneri e gjen kodin te Profili, te butoni &quot;Fto&quot;.</p>
+          <p className={s.lead}>Kodi është te Profili i partnerit.</p>
           <input
             className={`${s.input} ${s.code}`}
             autoCapitalize="characters"

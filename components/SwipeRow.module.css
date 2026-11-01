@@ -1,4 +1,4 @@
-.wrap { position: relative; overflow: hidden; }
+.wrap { position: relative; overflow: hidden; border-radius: 2px; }
 .actions { position: absolute; top: 0; right: 0; bottom: 0; display: flex; }
 .edit, .del {
   width: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
@@ -7,7 +7,7 @@
 .edit { background: var(--ink); color: var(--surface); }
 .del { background: var(--over); color: var(--surface-raised); }
 .content {
-  position: relative; background: var(--surface-raised);
+  position: relative; background: var(--surface);
   touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: pointer;
   transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
