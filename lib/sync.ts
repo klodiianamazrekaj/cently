@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { db, getHousehold, getMeta, onLocalChange, setMeta, type HouseholdMeta, type Transaction } from "./db";
+import { db, ensureSeed, getHousehold, getMeta, onLocalChange, setMeta, type HouseholdMeta, type Transaction } from "./db";
 import { supabase } from "./supabase";
 
 // How it works
@@ -137,7 +137,7 @@ async function pull(hid: string) {
   await setMeta("cursors", cursors);
 }
 
-async function countPending() {
+export async function countPending() {
   let n = 0;
   for (const t of TABLES) n += await db.table(t.local).where("synced").equals(0).count();
   return n;
@@ -334,8 +334,19 @@ export async function createInvite(memberId: string) {
   return data as string;
 }
 
-export async function leaveOnThisPhone() {
+// Signing out: try to send anything still waiting, then remove this household's data from the
+// phone, so the next person who signs in here starts clean. Returns how many changes were lost.
+export async function signOutAndClear(opts: { force?: boolean } = {}) {
+  if (hh && navigator.onLine) {
+    try { await syncNow(); } catch {}
+  }
+  const lost = await countPending();
+  if (lost > 0 && !opts.force) return lost;
   stopSync();
-  await db.meta.delete("household");
-  await db.meta.delete("cursors");
+  if (supabase) await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+  await db.transaction("rw", [db.members, db.accounts, db.categories, db.transactions, db.budgets, db.meta], async () => {
+    await Promise.all([db.members.clear(), db.accounts.clear(), db.categories.clear(), db.transactions.clear(), db.budgets.clear(), db.meta.clear()]);
+  });
+  await ensureSeed();
+  return 0;
 }

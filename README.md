@@ -18,10 +18,15 @@ An installable web app (PWA) for Klodiana and Benjamin to log every expense in s
 
 ## What works now
 
-- Home: month total, daily chart (tap a day), Klodiana vs Benjamin, spending by category, expenses by day, month switching
+- Welcome, sign up and log in with email and password; email confirmation by code or link; forgot password
+- Onboarding: create the household (your name and your partner's) or join with an invite code
+- Bottom tab bar with four screens and a central add button:
+  - **Kreu:** month total, daily chart, who paid, top categories, latest expenses
+  - **Lëvizjet:** all expenses by day, month switching, search, filters by type and person
+  - **Analiza:** donut by category with subcategories, change vs last month, daily average, 50/50 split, cash vs card, biggest expenses
+  - **Profili:** account, household members, invite code, sync status, sign out
 - Add: calculator-style amount, expense or income, category and subcategory, who paid, cash or card, note, date (today, yesterday, or calendar)
 - Half-swipe an expense to edit or delete, with undo
-- Sign in with a 6-digit email code, create the household, invite Benjamin with a code
 - Two-way sync with Supabase: offline first, live updates between phones, newest edit wins
 - Installs to the home screen and works offline
 
@@ -48,9 +53,11 @@ npm run dev
    - `supabase/migrations/20261101000000_init.sql`
    - `supabase/migrations/20261101020000_sync.sql`
 3. Copy the project URL and publishable (anon) key into `.env.local` and into Vercel's environment variables.
-4. Authentication > Sign In / Providers: Email enabled.
-5. Authentication > Emails: in both **Magic Link** and **Confirm signup** templates, include `{{ .Token }}` so the email contains the 6-digit code.
-6. Authentication > URL Configuration: Site URL = the Vercel URL.
+4. Authentication > Sign In / Providers > Email: enabled. "Confirm email" can stay on (the app accepts the code or the link) or be turned off.
+5. Authentication > URL Configuration:
+   - Site URL: the Vercel production URL, e.g. `https://cently.vercel.app`
+   - Redirect URLs: `https://cently.vercel.app/**` and `http://localhost:3000/**`
+6. Authentication > Emails > Templates: add `{{ .Token }}` to **Confirm signup** and **Reset Password** so the emails contain a code. On iPhone, links open in Safari rather than the home screen app, so the code is the smoother path.
 
 ## Install on iPhone
 
@@ -60,12 +67,17 @@ Open the deployed URL in Safari, tap Share, then "Add to Home Screen".
 
 ```
 app/                 pages and global styles (tokens)
-components/          QuickAdd, DateSheet (calendar), SwipeRow, AccountSheet, icons
+components/AppRoot   decides: welcome and auth, onboarding, or the app
+components/auth/     AuthFlow (sign up, log in, confirm, reset), Onboarding
+components/shell/    MainShell with the bottom tab bar
+components/views/    Kreu, Lëvizjet, Analiza, Profili and shared list parts
+components/          QuickAdd, DateSheet (calendar), SwipeRow, icons
 lib/db.ts            local IndexedDB schema and seed (Klodiana, Benjamin, Cash, Kartelë)
 lib/money.ts         Albanian money and date formatting
 lib/supabase.ts      Supabase client
 lib/sync.ts          sync engine: push, pull, realtime, create and join household
-lib/auth.ts          email code sign-in
+lib/auth.ts          sign up, log in, confirmation, password reset, Albanian errors
+lib/data.ts          shared hooks: people, accounts, categories, month data
 supabase/migrations  database schema with Row Level Security
 public/              manifest, service worker, icons
 brand/               source SVGs for the app icon
