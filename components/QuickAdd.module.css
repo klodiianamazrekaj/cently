@@ -106,9 +106,3 @@
   transition: background 0.2s, color 0.2s;
 }
 .dateOn { background: var(--ink); color: var(--surface); }
-.datePick { cursor: pointer; overflow: hidden; }
-/* The real date input covers the chip invisibly, so tapping it opens the iPhone date wheel. */
-.datePick input {
-  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
-  -webkit-appearance: none; appearance: none; border: 0; font-size: 16px;
-}

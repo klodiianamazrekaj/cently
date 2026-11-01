@@ -2,8 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
-import { db, deleteTransaction, ensureSeed, restoreTransaction, type Category, type Transaction } from "@/lib/db";
+import { ChevronLeft, ChevronRight, Cloud, CloudOff, Plus, X } from "lucide-react";
+import { db, deleteTransaction, ensureSeed, getHousehold, restoreTransaction, type Category, type Transaction } from "@/lib/db";
+import { useSession } from "@/lib/auth";
+import { startSync, stopSync, useSyncState } from "@/lib/sync";
+import { supabase } from "@/lib/supabase";
+import { AccountSheet } from "@/components/AccountSheet";
 import { formatCents, monthName, monthRange, sameDay, timeLabel } from "@/lib/money";
 import { catColor } from "@/lib/categoryStyle";
 import { QuickAdd } from "@/components/QuickAdd";
@@ -23,12 +27,24 @@ export default function Home() {
   const [undo, setUndo] = useState<{ id: string; key: number } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [account, setAccount] = useState(false);
+  const session = useSession();
+  const household = useLiveQuery(async () => (await getHousehold()) ?? null, []); // undefined = loading, null = none
+  const sync = useSyncState();
+
   useEffect(() => { ensureSeed(); }, []);
 
+  // Sync runs while signed in and part of a household.
+  const syncKey = session && household ? `${session.user.id}:${household.householdId}` : null;
+  useEffect(() => {
+    if (syncKey) startSync();
+    else if (session === null) stopSync();
+  }, [syncKey, session]);
+
   const rawMembers = useLiveQuery(() => db.members.toArray(), []);
-  const members = useMemo(() => [...(rawMembers ?? [])].sort((a, b) => a.color.localeCompare(b.color)), [rawMembers]);
-  const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? [];
-  const categories = useLiveQuery(() => db.categories.toArray(), []) ?? [];
+  const members = useMemo(() => (rawMembers ?? []).filter((m) => !m.deletedAt).sort((a, b) => a.color.localeCompare(b.color)), [rawMembers]);
+  const accounts = useLiveQuery(() => db.accounts.filter((a) => !a.deletedAt).toArray(), []) ?? [];
+  const categories = useLiveQuery(() => db.categories.filter((c) => !c.deletedAt).toArray(), []) ?? [];
 
   const now = new Date();
   const view = new Date(now.getFullYear(), now.getMonth() + offset, 1);
@@ -124,20 +140,38 @@ export default function Home() {
   return (
     <main className={s.main} onClick={() => openRow && setOpenRow(null)}>
       <header className={`${s.top} rise`}>
-        <div className={s.couple}>
+        <button className={`${s.couple} press`} onClick={() => setAccount(true)} aria-label="Llogaria dhe sinkronizimi">
           <div className={s.avatars}>
             {members.map((m) => (
               <span key={m.id} className={s.avatar} data-color={m.color}>{m.name.charAt(0)}</span>
             ))}
           </div>
           <span className={s.coupleName}>{members.map((m) => m.name).join(" & ")}</span>
-        </div>
+          {household && (
+            <span className={s.syncBadge} data-phase={sync.phase} aria-hidden>
+              {sync.phase === "offline" || sync.phase === "error" ? <CloudOff size={13} strokeWidth={2.25} /> : <Cloud size={13} strokeWidth={2.25} />}
+            </span>
+          )}
+        </button>
         <div className={s.monthNav}>
           <button className="press" onClick={() => changeMonth(-1)} aria-label="Muaji i kaluar"><ChevronLeft size={18} strokeWidth={2} /></button>
           <span className={s.monthLabel}>{monthName(view)}{view.getFullYear() !== now.getFullYear() ? ` ${view.getFullYear()}` : ""}</span>
           <button className="press" onClick={() => changeMonth(1)} disabled={isCurrent} aria-label="Muaji tjetër"><ChevronRight size={18} strokeWidth={2} /></button>
         </div>
       </header>
+
+      {supabase && household === undefined ? null : supabase && !household && (
+        <button className={`${s.banner} rise press`} onClick={() => setAccount(true)}>
+          <span className={s.bannerAvs}>
+            {members.map((m) => <span key={m.id} className={s.avatar} data-color={m.color}>{m.name.charAt(0)}</span>)}
+          </span>
+          <span className={s.bannerText}>
+            <b>Lidhuni të dy</b>
+            <span>Shpenzimet shfaqen te të dy telefonat</span>
+          </span>
+          <ChevronRight size={18} strokeWidth={2} />
+        </button>
+      )}
 
       <section key={offset} className={`${s.hero} rise`} style={{ animationDelay: "40ms" }}>
         <p className={s.heroLabel}>{isCurrent ? "Shpenzuar këtë muaj" : `Shpenzuar në ${monthName(view).toLowerCase()}`}</p>
@@ -303,10 +337,12 @@ export default function Home() {
         editing={sheet?.editing ?? null}
         onClose={() => setSheet(null)}
         onSaved={onSaved}
+        defaultPayer={household?.memberId ?? null}
         members={members}
         accounts={accounts}
         categories={categories}
       />
+      <AccountSheet open={account} onClose={() => setAccount(false)} session={session} />
     </main>
   );
 }

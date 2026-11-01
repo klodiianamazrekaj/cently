@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Delete, X } from "lucide-react";
 import { addTransaction, updateTransaction, type Account, type Category, type Member, type Transaction } from "@/lib/db";
-import { inputToCents, onDay, pressKey, sameDay, shortDate, toDateInput } from "@/lib/money";
+import { inputToCents, onDay, pressKey, sameDay, shortDate } from "@/lib/money";
 import { catColor } from "@/lib/categoryStyle";
 import { CategoryIcon } from "./CategoryIcon";
+import { DateSheet } from "./DateSheet";
 import s from "./QuickAdd.module.css";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
   onClose: () => void;
   onSaved?: (occurredAt: number) => void;
   editing?: Transaction | null;
+  defaultPayer?: string | null;
   members: Member[];
   accounts: Account[];
   categories: Category[];
@@ -29,7 +31,7 @@ function centsToInput(cents: number) {
   return `${e},${String(c).padStart(2, "0").replace(/0$/, "")}`;
 }
 
-export function QuickAdd({ open, onClose, onSaved, editing, members, accounts: rawAccounts, categories }: Props) {
+export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, members, accounts: rawAccounts, categories }: Props) {
   const accounts = useMemo(() => [...rawAccounts].sort((a, b) => a.kind.localeCompare(b.kind)), [rawAccounts]);
   const [kind, setKind] = useState<"expense" | "income">("expense");
   const [input, setInput] = useState("");
@@ -41,6 +43,7 @@ export function QuickAdd({ open, onClose, onSaved, editing, members, accounts: r
   const [when, setWhen] = useState<number>(Date.now());
   const [saving, setSaving] = useState(false);
   const [bump, setBump] = useState(0);
+  const [calendar, setCalendar] = useState(false);
 
   const catById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
@@ -72,12 +75,13 @@ export function QuickAdd({ open, onClose, onSaved, editing, members, accounts: r
       setSubId(null);
       setGroupId(null);
       setWhen(Date.now());
+      setPayer(defaultPayer ?? members[0]?.id ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing?.id]);
 
   // Default payer and account once they have loaded.
-  const firstMember = members[0]?.id ?? null;
+  const firstMember = defaultPayer ?? members[0]?.id ?? null;
   const firstAccount = accounts[0]?.id ?? null;
   useEffect(() => { setPayer((p) => p ?? firstMember); }, [firstMember]);
   useEffect(() => { setAccountId((a) => a ?? firstAccount); }, [firstAccount]);
@@ -86,7 +90,7 @@ export function QuickAdd({ open, onClose, onSaved, editing, members, accounts: r
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || calendar) return;
       if (/^[0-9]$/.test(e.key)) press(e.key);
       else if (e.key === "," || e.key === ".") press(",");
       else if (e.key === "Backspace") press("del");
@@ -169,21 +173,14 @@ export function QuickAdd({ open, onClose, onSaved, editing, members, accounts: r
       <div className={s.dates} aria-label="Data">
         <button className={`${s.date} press ${isToday ? s.dateOn : ""}`} onClick={() => setDay(new Date())} aria-pressed={isToday}>Sot</button>
         <button className={`${s.date} press ${isYesterday ? s.dateOn : ""}`} onClick={() => setDay(new Date(now - DAY))} aria-pressed={isYesterday}>Dje</button>
-        <label className={`${s.date} ${s.datePick} press ${!isToday && !isYesterday ? s.dateOn : ""}`}>
+        <button
+          className={`${s.date} press ${!isToday && !isYesterday ? s.dateOn : ""}`}
+          onClick={() => setCalendar(true)}
+          aria-pressed={!isToday && !isYesterday}
+        >
           <CalendarDays size={15} strokeWidth={2} />
           {!isToday && !isYesterday ? shortDate(when) : "Tjetër ditë"}
-          <input
-            type="date"
-            aria-label="Zgjidh datën"
-            value={toDateInput(when)}
-            max={toDateInput(now)}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              const [y, m, d] = e.target.value.split("-").map(Number);
-              setDay(new Date(y, m - 1, d));
-            }}
-          />
-        </label>
+        </button>
       </div>
 
       <div className={s.grid} aria-label="Kategoria">
@@ -242,6 +239,8 @@ export function QuickAdd({ open, onClose, onSaved, editing, members, accounts: r
           </button>
         ))}
       </div>
+
+      <DateSheet open={calendar} value={new Date(when)} onSelect={setDay} onClose={() => setCalendar(false)} />
 
       <button className={`${s.save} press`} disabled={!canSave} onClick={save}>
         {cents === 0 ? "Shkruaj shumën" : !groupId ? "Zgjidh kategorinë" : editing ? "Ruaj ndryshimet" : `Ruaj ${label}`}
