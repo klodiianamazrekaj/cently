@@ -1,3 +1,5 @@
+.scroller, .tabbar, .toast { --tabbar-h: 64px; }
+
 .scroller {
   /* The app scrolls inside this box, never the document. On iOS a fixed bar
      jumps when the document height changes between tabs; a locked viewport keeps it put. */
@@ -6,21 +8,21 @@
 }
 .main {
   max-width: 480px; margin: 0 auto; min-height: 100%;
-  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--space-4) calc(env(safe-area-inset-bottom) + 112px);
+  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--space-4) calc(env(safe-area-inset-bottom) + var(--tabbar-h) + var(--space-6));
 }
 .view { animation: fadeIn 0.28s cubic-bezier(0.2, 0.9, 0.3, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
 
-/* Floating glass tab bar */
+/* Glass tab bar docked to the bottom edge; the home indicator sits inside it */
 .tabbar {
-  position: fixed; z-index: 20; left: 50%; transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
-  width: calc(100% - 24px); max-width: 456px; height: 68px;
+  position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding: 0 max(var(--space-2), calc((100% - 480px) / 2)) env(safe-area-inset-bottom);
   display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
-  border-radius: 30px; background: var(--glass);
+  background: var(--glass);
   -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: var(--shadow-bar); border: 1px solid var(--glass-line);
+  border-top: 1px solid var(--glass-line);
 }
 .tab {
   height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
@@ -38,14 +40,14 @@
 
 .addSlot { display: grid; place-items: center; }
 .add {
-  width: 54px; height: 54px; border-radius: 20px; display: grid; place-items: center;
-  background: var(--lime); color: var(--on-lime); box-shadow: 0 6px 18px rgba(150, 190, 30, 0.35);
+  width: 52px; height: 44px; border-radius: 16px; display: grid; place-items: center;
+  background: var(--lime); color: var(--on-lime); box-shadow: 0 4px 12px rgba(150, 190, 30, 0.3);
 }
 
 /* Undo toast above the tab bar */
 .toast {
   position: fixed; z-index: 21; left: 50%; transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 90px);
+  bottom: calc(env(safe-area-inset-bottom) + var(--tabbar-h) + var(--space-3));
   height: 52px; padding: 0 6px 0 20px; border-radius: var(--radius-pill);
   background: var(--ink); color: var(--surface); box-shadow: var(--shadow-float);
   display: inline-flex; align-items: center; gap: var(--space-4); font-size: 15px; font-weight: 500; white-space: nowrap;
