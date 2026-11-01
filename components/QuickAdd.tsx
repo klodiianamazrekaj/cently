@@ -18,8 +18,8 @@ type Props = {
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "del"];
 
-export function QuickAdd({ open, onClose, members, accounts, categories }: Props) {
-  accounts = [...accounts].sort((a, b) => a.kind.localeCompare(b.kind));
+export function QuickAdd({ open, onClose, members, accounts: rawAccounts, categories }: Props) {
+  const accounts = useMemo(() => [...rawAccounts].sort((a, b) => a.kind.localeCompare(b.kind)), [rawAccounts]);
   const [kind, setKind] = useState<"expense" | "income">("expense");
   const [input, setInput] = useState("");
   const [groupId, setGroupId] = useState<string | null>(null);
@@ -39,15 +39,20 @@ export function QuickAdd({ open, onClose, members, accounts, categories }: Props
     [categories, groupId]
   );
 
+  // Clear the form only when the screen opens, never on other re-renders.
   useEffect(() => {
     if (!open) return;
     setInput("");
     setNote("");
     setSubId(null);
     setGroupId(null);
-    setPayer((p) => p ?? members[0]?.id ?? null);
-    setAccountId((a) => a ?? accounts[0]?.id ?? null);
-  }, [open, members, accounts]);
+  }, [open]);
+
+  // Default payer and account once they have loaded.
+  const firstMember = members[0]?.id ?? null;
+  const firstAccount = accounts[0]?.id ?? null;
+  useEffect(() => { setPayer((p) => p ?? firstMember); }, [firstMember]);
+  useEffect(() => { setAccountId((a) => a ?? firstAccount); }, [firstAccount]);
 
   useEffect(() => {
     setGroupId(null);

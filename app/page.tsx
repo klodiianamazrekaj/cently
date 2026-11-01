@@ -20,7 +20,8 @@ export default function Home() {
 
   useEffect(() => { ensureSeed(); }, []);
 
-  const members = (useLiveQuery(() => db.members.toArray(), []) ?? []).sort((a, b) => a.color.localeCompare(b.color));
+  const rawMembers = useLiveQuery(() => db.members.toArray(), []);
+  const members = useMemo(() => [...(rawMembers ?? [])].sort((a, b) => a.color.localeCompare(b.color)), [rawMembers]);
   const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? [];
   const categories = useLiveQuery(() => db.categories.toArray(), []) ?? [];
   const now = new Date();
