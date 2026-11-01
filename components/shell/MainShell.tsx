@@ -116,7 +116,7 @@ export function MainShell({ session }: { session: Session | null }) {
         {TABS.slice(0, 2).map((t) => <TabButton key={t.id} t={t} active={tab === t.id} onClick={() => setTab(t.id)} />)}
         <div className={s.addSlot}>
           <button className={`${s.add} press`} onClick={() => setSheet({ editing: null })} aria-label="Shto shpenzim">
-            <Plus size={26} strokeWidth={2.4} />
+            <Plus size={24} strokeWidth={2.2} />
           </button>
         </div>
         {TABS.slice(2).map((t) => <TabButton key={t.id} t={t} active={tab === t.id} onClick={() => setTab(t.id)} />)}
@@ -140,7 +140,7 @@ function TabButton({ t, active, onClick }: { t: (typeof TABS)[number]; active: b
   const Icon = t.icon;
   return (
     <button className={`${s.tab} ${active ? s.tabOn : ""}`} onClick={onClick} aria-current={active ? "page" : undefined}>
-      <span className={s.tabIcon}><Icon size={22} strokeWidth={active ? 2.25 : 1.75} /></span>
+      <span className={s.tabIcon}><Icon size={22} strokeWidth={active ? 2.1 : 1.6} /></span>
       <span className={s.tabLabel}>{t.label}</span>
     </button>
   );
