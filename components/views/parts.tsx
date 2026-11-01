@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Transaction } from "@/lib/db";
 import { formatCents, monthName, timeLabel } from "@/lib/money";
@@ -9,17 +9,48 @@ import { useSyncState } from "@/lib/sync";
 import { CatTile } from "@/components/CatTile";
 import { Amount } from "@/components/Amount";
 import { SwipeRow } from "@/components/SwipeRow";
+import { DateSheet } from "@/components/DateSheet";
 import { useShell } from "@/components/shell/MainShell";
 import s from "./ui.module.css";
 
-export function MonthNav() {
+// Page title with the month switcher. Swipe left or right on it to change the month;
+// tap the month name to jump to any date with the calendar.
+export function MonthHeader({ title, onPickDate }: { title: string; onPickDate?: (d: Date) => void }) {
   const { offset, setOffset } = useShell();
   const { view, now } = monthInfo(offset);
+  const [calendar, setCalendar] = useState(false);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+
+  const go = (n: number) => setOffset(Math.min(0, n));
+  const pick = (d: Date) => {
+    setOffset((d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth());
+    onPickDate?.(d);
+  };
+
   return (
-    <div className={s.monthNav}>
-      <button className={`${s.monthArrow} press`} onClick={() => setOffset(offset - 1)} aria-label="Muaji i kaluar"><ChevronLeft size={18} strokeWidth={2} /></button>
-      <span className={s.monthLabel}>{monthName(view)}{view.getFullYear() !== now.getFullYear() ? ` ${String(view.getFullYear()).slice(2)}` : ""}</span>
-      <button className={`${s.monthArrow} press`} onClick={() => setOffset(Math.min(0, offset + 1))} disabled={offset >= 0} aria-label="Muaji tjetër"><ChevronRight size={18} strokeWidth={2} /></button>
+    <div
+      className={s.titleRow}
+      onPointerDown={(e) => { swipe.current = { x: e.clientX, y: e.clientY }; }}
+      onPointerUp={(e) => {
+        const st = swipe.current;
+        swipe.current = null;
+        if (!st) return;
+        const dx = e.clientX - st.x;
+        const dy = e.clientY - st.y;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? offset + 1 : offset - 1);
+      }}
+      onPointerCancel={() => { swipe.current = null; }}
+      style={{ touchAction: "pan-y" }}
+    >
+      <h1 className={s.pageTitle}>{title}</h1>
+      <div className={s.monthNav}>
+        <button className={`${s.monthArrow} press`} onClick={() => go(offset - 1)} aria-label="Muaji i kaluar"><ChevronLeft size={18} strokeWidth={2} /></button>
+        <button className={s.monthLabel} onClick={() => setCalendar(true)} aria-label={`${monthName(view)}, zgjidh datën`}>
+          {monthName(view)}{view.getFullYear() !== now.getFullYear() ? ` ${String(view.getFullYear()).slice(2)}` : ""}
+        </button>
+        <button className={`${s.monthArrow} press`} onClick={() => go(offset + 1)} disabled={offset >= 0} aria-label="Muaji tjetër"><ChevronRight size={18} strokeWidth={2} /></button>
+      </div>
+      <DateSheet open={calendar} value={view} onSelect={pick} onClose={() => setCalendar(false)} />
     </div>
   );
 }

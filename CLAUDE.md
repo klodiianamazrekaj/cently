@@ -38,13 +38,25 @@ Modern, premium, mostly monochrome with one accent. Feels like Luna, not like a 
 
 - **Colours:** near-black `#0D0E10` and near-white `#F6F6F3` base; **lime `#C8F04A`** is the only brand accent, used as a fill (add button, selected day, active chips, primary buttons); text on lime is `--on-lime`. Income uses `--income` (lime-ink). **Spending is ink, never red.** Red (`--over`) only for over-budget and destructive actions.
 - **People:** person one is `blue`, person two is `orange` (dots, avatars, bars). Always pair colour with a name or initial.
-- **Categories:** each top-level category has its own soft colour pair (`--cat-*-bg` / `--cat-*`), mapped by icon in `lib/categoryStyle.ts`.
+- **Categories:** each top-level category has a colour pair (`--cat-<name>-bg` / `--cat-<name>`, light and dark in `globals.css`). The category's own `color` wins; without one, `lib/categoryStyle.ts` picks one from its icon. Picker colours: `CAT_COLORS` (green, teal, cyan, lime, yellow, amber, brown, pink, violet, slate, gray). Icons: `CATEGORY_ICONS` in `components/CategoryIcon.tsx` (51 curated Lucide icons; keys are stored, never rename one).
 - **Type:** Geist for everything; titles 600 to 650 weight with tight negative tracking; amounts always `tabular-nums`, big euros with smaller cents (`components/Amount.tsx`).
 - **Money format:** Albanian convention `1.284,50 €` (see `lib/money.ts`).
-- **Shapes:** radius tokens `--radius-sm` 10, `md` 16, `lg` 24, `pill`. Cards on `--surface-raised` with `--shadow-card`. Floating glass tab bar.
+- **Shapes:** radius tokens `--radius-sm` 10, `md` 16, `lg` 24, `pill`. Floating glass tab bar (a rounded pill, 8px above the iPhone home indicator).
 - **Logo:** an open ring "C" (a coin) with a lime dot in its opening (the cent). `components/Mark.tsx`, icons in `public/icons`, sources in `brand/`.
 - **Motion:** subtle rise and fade on screens, count-up numbers, growing bars; always respect `prefers-reduced-motion`.
 - **Voice:** short, friendly Albanian, talks to "ju" (you two). No guilt about spending. No exclamation marks except real celebrations.
+
+### Design rules: minimal, calm, modern, premium
+
+The app must never look cluttered or "AI generated".
+
+- **Cut text.** No helper hints, no subtitles that repeat the title, no explaining the obvious. Short labels; let hierarchy, spacing and type do the work.
+- **Numbers are the hero:** big totals, small cents, tabular figures (`Amount`).
+- **Few containers.** No cards with shadows for content. Use whitespace and hairline dividers (`.list` in `ui.module.css`, inset after the icon). No boxes inside boxes.
+- **Avoid generic patterns:** coloured icon tiles on every row (rows use a neutral tile with the glyph in the category colour, `CatTile`), pill chips everywhere (filters and tabs are plain text, active = ink and semibold, inactive = muted), borders or outlines to show selection, percentages and badges on everything, centred hero blocks with lots of copy.
+- **Selection** is shown with colour fill or ink weight, never an outline. A chosen category fills its tile with its soft colour.
+- **Expense rows:** category icon, name or note, one short muted line (`Klodiana · 16:20`, plus the category when a note is shown), amount. No coloured dots.
+- Lime stays rare: the + button, primary buttons, the selected chart bar, today's caret.
 
 ## App structure
 
@@ -56,20 +68,22 @@ Modern, premium, mostly monochrome with one accent. Feels like Luna, not like a 
 
 Tabs (single page, tab state in `MainShell`, no routes, so it works offline):
 
-- **Kreu** (`views/HomeView.tsx`): greeting, month total, daily bar chart (tap a day), who paid, top 4 categories, latest 5 expenses
-- **Lëvizjet** (`views/TransactionsView.tsx`): month switcher, totals, search, filters by type and person, day groups
+- **Kreu** (`views/HomeView.tsx`): month total as the hero, daily bars (tap a day), who paid (split bar), top 4 categories, latest 5 expenses
+- **Lëvizjet** (`views/TransactionsView.tsx`): month header, a swipeable strip of the month's days (dot = has expenses, today in lime ink; tap to filter, tap again or "Të gjitha" to clear), total, text filters by type and person, search behind an icon, day groups
 - **+** (centre): opens `components/QuickAdd.tsx`
-- **Analiza** (`views/StatsView.tsx`): donut by category with subcategory drill-down, change vs previous month, daily average, 50/50 split, cash vs card, biggest expenses
-- **Profili** (`views/ProfileView.tsx`): account, household members, invite code (Fto), sync status, sign out
+- **Analiza** (`views/StatsView.tsx`): total and change vs last month, donut by category with subcategory drill-down, who paid with 50/50, cash vs card, biggest expenses
+- **Profili** (`views/ProfileView.tsx`): account, Kategoritë, household members, invite code (Fto), sync status, sign out
 
-Shared pieces: `views/parts.tsx` (MonthNav, TxList with half-swipe, TxRow, SyncBadge, Empty), `components/SwipeRow.tsx` (swipe left reveals Ndrysho and Fshi), `components/DateSheet.tsx` (calendar), `lib/data.ts` (useLookups, monthInfo, useMonthTxs, groupByDay, greeting).
+Shared pieces: `views/parts.tsx` (`MonthHeader`: swipe left or right to change month, tap the month name for the calendar; TxList with half-swipe, TxRow, SyncBadge dot, Empty), `components/SwipeRow.tsx` (swipe left reveals Ndrysho and Fshi), `components/DateSheet.tsx` (calendar; `quick` adds a Dje button), `lib/data.ts` (useLookups, monthInfo, useMonthTxs, groupByDay).
 
-Quick-add details: calculator-style amount (typing `6` means 6 €, the `,` key starts cents), expense or income, category grid then subcategory, who paid (defaults to the person on this phone), Cash or Kartelë, note, date (Sot, Dje, or calendar). Editing reopens it prefilled. Delete shows an undo toast.
+Quick-add (`QuickAdd.tsx`): the amount is the hero (calculator-style: typing `6` means 6 €, the `,` key starts cents), then one row of categories (+ at the end creates a new one and selects it), subcategories as plain text once a category is chosen, then one quiet row: date (Sot, Dje or calendar in the sheet), who paid (tap to switch, defaults to the person on this phone), Cash or Kartelë (tap to switch), note. Then the keypad and save. Editing reopens it prefilled. Delete shows an undo toast.
+
+Kategoritë (`components/categories/CategoriesScreen.tsx`, from Profili and from the + in quick-add): expense and income tabs; add, rename, reorder (Rendit) and delete categories and subcategories; pick an icon and a colour. Edits are a draft saved with Ruaj. Deleting is soft: a subcategory's expenses move to its parent; a category with expenses asks where they should go (another category or Pa kategori). Helpers in `lib/db.ts`: `createCategory`, `updateCategory`, `setCategoryOrder`, `categoryUsage`, `deleteCategory`.
 
 ## Data and sync
 
 - Amounts are **integer cents**. IDs are UUIDs generated on the device.
-- Everything is written to IndexedDB first (`lib/db.ts`) with `synced = 0`; use the helpers there (`addTransaction`, `updateTransaction`, `deleteTransaction`, `restoreTransaction`), which also notify the sync engine. Deletes are soft (`deletedAt`).
+- Everything is written to IndexedDB first (`lib/db.ts`, Dexie schema v3) with `synced = 0`; use the helpers there (`addTransaction`, `updateTransaction`, `deleteTransaction`, `restoreTransaction`), which also notify the sync engine. Deletes are soft (`deletedAt`).
 - `lib/sync.ts`: push unsynced rows with upsert, then pull rows changed since the last pull per table using `server_seq` (a server-side counter, so phone clocks don't matter), Realtime triggers a pull, also on reconnect, app focus and every minute.
 - A trigger on the server keeps the newest edit (`updated_at`) and stamps `server_seq`.
 - Joining a household keeps the phone's existing expenses and remaps people, accounts and categories by name.
@@ -83,6 +97,7 @@ Quick-add details: calculator-style amount (typing `6` means 6 €, the `,` key 
 - Migrations in `supabase/migrations`, run by hand in the SQL Editor, in order:
   1. `20261101000000_init.sql` (already run; not re-runnable)
   2. `20261101020000_sync.sql` (re-runnable)
+  3. `20261102000000_category_color.sql` (re-runnable; adds `categories.color`). Until it has run, sync skips the colour and coloured categories stay pending.
 - **Never edit a migration that has been run.** Add a new file with a later timestamp, and make it safe to re-run (`IF NOT EXISTS`, `CREATE OR REPLACE`, guarded `DO` blocks).
 - Auth: email + password. "Confirm email" may be off; the app handles both. Email templates should include `{{ .Token }}` for Confirm signup and Reset Password. URL Configuration: Site URL is the Vercel URL, Redirect URLs include it with `/**`.
 - Never put the service_role or secret key in the app or the repo.
@@ -104,7 +119,6 @@ npm run build        # must pass before pushing
 
 ## Ideas and next steps (not built yet)
 
-- Editable categories in the app (add, rename, colour, icon, reorder, hide)
 - Monthly budgets per category (the `budgets` table exists) with "how much is left"
 - Recurring expenses (rent, internet, subscriptions; `recurring_rules` exists)
 - Savings goals together (butter-yellow celebration moments)

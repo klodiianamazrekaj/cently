@@ -4,7 +4,7 @@
 /* ---------- Page header ---------- */
 .pageTop { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
 .pageTitle { margin: var(--space-3) 0 var(--space-5); font-size: 28px; line-height: 34px; font-weight: 650; letter-spacing: -0.04em; }
-.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: var(--space-3) 0 var(--space-5); }
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: var(--space-3) 0 var(--space-5); user-select: none; -webkit-user-select: none; }
 .titleRow .pageTitle { margin: 0; }
 .eyebrow { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-muted); letter-spacing: -0.01em; }
 
@@ -28,7 +28,7 @@
 .monthNav button { height: 44px; display: grid; place-items: center; color: var(--ink); }
 .monthArrow { width: 36px; color: var(--ink-muted) !important; }
 .monthArrow:disabled { opacity: 0.3; cursor: default; }
-.monthLabel { padding: 0 4px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.monthLabel { min-width: 64px; padding: 0 4px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
 
 /* ---------- Hero numbers ---------- */
 .heroBlock { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -106,23 +106,25 @@
 .empty p { margin: 0; }
 
 /* ---------- Search and filters (Lëvizjet) ---------- */
-.tools { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-5) 0 var(--space-3); }
+.tools { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; margin: var(--space-4) 0 var(--space-2); }
 .search {
   flex: 1; display: flex; align-items: center; gap: var(--space-2); height: 40px; padding: 0 var(--space-3);
   border-radius: var(--radius-sm); background: var(--surface-sunken); color: var(--ink-muted);
 }
 .search input { flex: 1; min-width: 0; border: 0; background: none; font-size: 16px; color: var(--ink); height: 100%; }
 .search input:focus { outline: none; }
+.search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
 .search input::placeholder { color: var(--ink-muted); }
 .search button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-pill); color: var(--ink-muted); }
 .filters {
   display: flex; gap: var(--space-4); overflow-x: auto; scrollbar-width: none;
-  margin: 0 calc(-1 * var(--space-4)) var(--space-3); padding: 0 var(--space-4);
+  flex: 1; min-width: 0; margin-left: calc(-1 * var(--space-4)); padding-left: var(--space-4); padding-right: var(--space-3);
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
 }
 .filters::-webkit-scrollbar { display: none; }
 .filter { flex: none; height: 36px; font-size: 14px; font-weight: 500; color: var(--ink-muted); transition: color 0.15s; }
 .filterOn { color: var(--ink); font-weight: 600; }
+.searchBtn { width: 40px; height: 40px; margin-right: -8px; display: grid; place-items: center; color: var(--ink-muted); flex: none; }
 .filterSep { flex: none; width: 1px; height: 14px; align-self: center; background: var(--line); }
 .hint { margin: 0 0 var(--space-2); font-size: 13px; color: var(--ink-muted); }
 

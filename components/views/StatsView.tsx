@@ -9,7 +9,7 @@ import { catColor } from "@/lib/categoryStyle";
 import { CatTile } from "@/components/CatTile";
 import { Amount } from "@/components/Amount";
 import { useShell } from "@/components/shell/MainShell";
-import { Empty, MonthNav, TxRow } from "./parts";
+import { Empty, MonthHeader, TxRow } from "./parts";
 import s from "./ui.module.css";
 
 type Group = { cat: Category; cents: number; subs: { name: string; cents: number }[] };
@@ -64,10 +64,7 @@ export function StatsView() {
 
   return (
     <>
-      <div className={s.titleRow}>
-        <h1 className={s.pageTitle}>Analiza</h1>
-        <MonthNav />
-      </div>
+      <MonthHeader title="Analiza" />
 
       {expenses.length === 0 ? (
         <Empty title={`Asnjë shpenzim në ${monthName(view).toLowerCase()}`} />
