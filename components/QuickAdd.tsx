@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Delete, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, Check, CreditCard, Delete, PencilLine, Plus, Wallet, X } from "lucide-react";
 import { addTransaction, updateTransaction, type Account, type Category, type Member, type Transaction } from "@/lib/db";
 import { inputToCents, onDay, pressKey, sameDay, shortDate } from "@/lib/money";
 import { catColor } from "@/lib/categoryStyle";
@@ -13,6 +13,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onSaved?: (occurredAt: number) => void;
+  onNewCategory?: (kind: "expense" | "income", done: (id: string) => void) => void;
   editing?: Transaction | null;
   defaultPayer?: string | null;
   members: Member[];
@@ -31,7 +32,7 @@ function centsToInput(cents: number) {
   return `${e},${String(c).padStart(2, "0").replace(/0$/, "")}`;
 }
 
-export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, members, accounts: rawAccounts, categories }: Props) {
+export function QuickAdd({ open, onClose, onSaved, onNewCategory, editing, defaultPayer, members, accounts: rawAccounts, categories }: Props) {
   const accounts = useMemo(() => [...rawAccounts].sort((a, b) => a.kind.localeCompare(b.kind)), [rawAccounts]);
   const [kind, setKind] = useState<"expense" | "income">("expense");
   const [input, setInput] = useState("");
@@ -40,13 +41,14 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
   const [payer, setPayer] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
   const [when, setWhen] = useState<number>(Date.now());
   const [saving, setSaving] = useState(false);
   const [bump, setBump] = useState(0);
   const [calendar, setCalendar] = useState(false);
+  const noteRef = useRef<HTMLInputElement>(null);
 
   const catById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
-
   const groups = useMemo(
     () => categories.filter((c) => !c.parentId && c.kind === kind).sort((a, b) => a.sortOrder - b.sortOrder),
     [categories, kind]
@@ -70,6 +72,7 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
       setNote(editing.note ?? "");
       setWhen(editing.occurredAt);
     } else {
+      setKind("expense");
       setInput("");
       setNote("");
       setSubId(null);
@@ -77,6 +80,7 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
       setWhen(Date.now());
       setPayer(defaultPayer ?? members[0]?.id ?? null);
     }
+    setNoteOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing?.id]);
 
@@ -85,6 +89,7 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
   const firstAccount = accounts[0]?.id ?? null;
   useEffect(() => { setPayer((p) => p ?? firstMember); }, [firstMember]);
   useEffect(() => { setAccountId((a) => a ?? firstAccount); }, [firstAccount]);
+  useEffect(() => { if (noteOpen) noteRef.current?.focus(); }, [noteOpen]);
 
   // Typing on a laptop keyboard works too.
   useEffect(() => {
@@ -106,8 +111,9 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
   const canSave = cents > 0 && !!groupId && !saving;
   const [euros, decimals] = input.split(",");
   const now = Date.now();
-  const isToday = sameDay(when, now);
-  const isYesterday = sameDay(when, now - DAY);
+  const dateLabel = sameDay(when, now) ? "Sot" : sameDay(when, now - DAY) ? "Dje" : shortDate(when);
+  const payerMember = members.find((m) => m.id === payer);
+  const account = accounts.find((a) => a.id === accountId);
 
   function press(k: string) {
     setInput((v) => pressKey(v, k));
@@ -121,6 +127,12 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
     setGroupId(null);
     setSubId(null);
   }
+
+  const cycle = <T extends { id: string }>(list: T[], current: string | null) => {
+    if (!list.length) return null;
+    const i = list.findIndex((x) => x.id === current);
+    return list[(i + 1) % list.length].id;
+  };
 
   // Keep the original time when editing; use the current time for a new expense.
   const setDay = (day: Date) => setWhen(onDay(day, editing ? new Date(editing.occurredAt) : new Date()));
@@ -145,14 +157,15 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
     onClose();
   };
 
-  const groupColor = catColor(groups.find((g) => g.id === groupId)?.icon);
+  const group = groups.find((g) => g.id === groupId);
+  const groupColor = catColor(group?.icon, group?.color);
   const label = kind === "expense" ? "shpenzimin" : "të ardhurat";
 
   return (
-    <div className={s.screen} role="dialog" aria-label={editing ? "Ndrysho shpenzimin" : "Shto shpenzim"}>
+    <div className={s.screen} role="dialog" aria-label={editing ? "Ndrysho" : "Shto shpenzim"}>
       <div className={s.top}>
-        <button className={`${s.close} press`} onClick={onClose} aria-label="Mbyll"><X size={20} strokeWidth={2} /></button>
-        <div className={s.segment} role="tablist">
+        <button className={`${s.close} press`} onClick={onClose} aria-label="Mbyll"><X size={22} strokeWidth={1.75} /></button>
+        <div className={s.segment} role="tablist" aria-label="Lloji">
           <button role="tab" aria-selected={kind === "expense"} className={kind === "expense" ? s.segOn : s.seg} onClick={() => pickKind("expense")}>Shpenzim</button>
           <button role="tab" aria-selected={kind === "income"} className={kind === "income" ? s.segOn : s.seg} onClick={() => pickKind("income")}>Të ardhura</button>
         </div>
@@ -161,90 +174,96 @@ export function QuickAdd({ open, onClose, onSaved, editing, defaultPayer, member
 
       <div className={s.amountWrap}>
         {editing && <span className={s.editTag}>Po ndryshon</span>}
-        <div key={bump} className={`${s.amount} num ${kind === "income" ? s.income : ""} ${input ? "" : s.empty}`}>
+        <div key={bump} className={`${s.amount} num ${kind === "income" ? s.income : ""} ${input ? "" : s.empty}`} aria-live="polite">
           <span>{euros || "0"}</span>
           {decimals !== undefined && <span className={s.decimals}>,{decimals}</span>}
           <span className={s.caret} />
           <span className={s.euro}>€</span>
         </div>
-        <input className={s.note} placeholder="Shto një shënim" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} />
+        {(noteOpen || note) && (
+          <input
+            ref={noteRef}
+            className={s.note}
+            placeholder="Shënim"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onBlur={() => setNoteOpen(false)}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+            maxLength={80}
+            aria-label="Shënim"
+          />
+        )}
       </div>
 
-      <div className={s.dates} aria-label="Data">
-        <button className={`${s.date} press ${isToday ? s.dateOn : ""}`} onClick={() => setDay(new Date())} aria-pressed={isToday}>Sot</button>
-        <button className={`${s.date} press ${isYesterday ? s.dateOn : ""}`} onClick={() => setDay(new Date(now - DAY))} aria-pressed={isYesterday}>Dje</button>
-        <button
-          className={`${s.date} press ${!isToday && !isYesterday ? s.dateOn : ""}`}
-          onClick={() => setCalendar(true)}
-          aria-pressed={!isToday && !isYesterday}
-        >
-          <CalendarDays size={15} strokeWidth={2} />
-          {!isToday && !isYesterday ? shortDate(when) : "Tjetër ditë"}
-        </button>
-      </div>
-
-      <div className={s.grid} aria-label="Kategoria">
+      <div className={s.cats} role="group" aria-label="Kategoria">
         {groups.map((g) => {
-          const c = catColor(g.icon);
+          const c = catColor(g.icon, g.color);
           const on = groupId === g.id;
           return (
             <button
               key={g.id}
-              className={`${s.tile} press ${on ? s.tileOn : ""}`}
+              className={`${s.cat} ${on ? s.catOn : ""}`}
               style={{ ["--tile-bg" as string]: c.bg, ["--tile-fg" as string]: c.fg }}
               onClick={() => { setGroupId(on ? null : g.id); setSubId(null); }}
               aria-pressed={on}
             >
-              <span className={s.tileIcon}><CategoryIcon name={g.icon} size={22} /></span>
-              <span className={s.tileName}>{g.name}</span>
+              <span className={s.catIcon}><CategoryIcon name={g.icon} size={22} /></span>
+              <span className={s.catName}>{g.name}</span>
             </button>
           );
         })}
+        {onNewCategory && (
+          <button
+            className={s.cat}
+            onClick={() => onNewCategory(kind, (id) => { setGroupId(id); setSubId(null); })}
+            aria-label="Kategori e re"
+          >
+            <span className={`${s.catIcon} ${s.catAdd}`}><Plus size={22} strokeWidth={1.75} /></span>
+            <span className={s.catName}>E re</span>
+          </button>
+        )}
       </div>
 
-      <div className={s.subs}>
+      <div className={s.subs} style={{ ["--tile-fg" as string]: groupColor.fg }}>
         {subs.map((c) => (
-          <button
-            key={c.id}
-            className={`${s.sub} press ${subId === c.id ? s.subOn : ""}`}
-            style={{ ["--tile-bg" as string]: groupColor.bg, ["--tile-fg" as string]: groupColor.fg }}
-            onClick={() => setSubId(subId === c.id ? null : c.id)}
-            aria-pressed={subId === c.id}
-          >
+          <button key={c.id} className={`${s.sub} ${subId === c.id ? s.subOn : ""}`} onClick={() => setSubId(subId === c.id ? null : c.id)} aria-pressed={subId === c.id}>
             {c.name}
           </button>
         ))}
       </div>
 
-      <div className={s.pickers}>
-        <div className={s.toggle} aria-label={kind === "expense" ? "Kush pagoi" : "Kush fitoi"}>
-          {members.map((m) => (
-            <button key={m.id} className={payer === m.id ? s.toggleOn : s.toggleBtn} onClick={() => setPayer(m.id)}>
-              <span className={s.av} data-color={m.color}>{m.name.charAt(0)}</span>
-              {m.name}
-            </button>
-          ))}
-        </div>
-        <div className={s.toggle} aria-label="Me çfarë">
-          {accounts.map((a) => (
-            <button key={a.id} className={accountId === a.id ? s.toggleOn : s.toggleBtn} onClick={() => setAccountId(a.id)}>{a.name}</button>
-          ))}
-        </div>
+      <div className={s.controls}>
+        <button className={s.ctrl} onClick={() => setCalendar(true)} aria-label={`Data: ${dateLabel}`}>
+          <CalendarDays size={15} strokeWidth={1.75} />{dateLabel}
+        </button>
+        {payerMember && (
+          <button className={s.ctrl} onClick={() => setPayer(cycle(members, payer))} aria-label={`${kind === "expense" ? "Pagoi" : "Fitoi"}: ${payerMember.name}`}>
+            <span className={s.av} data-color={payerMember.color}>{payerMember.name.charAt(0)}</span>{payerMember.name}
+          </button>
+        )}
+        {account && (
+          <button className={s.ctrl} onClick={() => setAccountId(cycle(accounts, accountId))} aria-label={`Me: ${account.name}`}>
+            {account.kind === "cash" ? <Wallet size={15} strokeWidth={1.75} /> : <CreditCard size={15} strokeWidth={1.75} />}{account.name}
+          </button>
+        )}
+        <button className={`${s.ctrl} ${note ? s.ctrlOn : ""}`} onClick={() => setNoteOpen(true)} aria-label="Shënim">
+          {note ? <Check size={15} strokeWidth={2} /> : <PencilLine size={15} strokeWidth={1.75} />}Shënim
+        </button>
       </div>
 
       <div className={s.keypad}>
         {KEYS.map((k) => (
           <button key={k} className={`${s.key} num`} onClick={() => press(k)} aria-label={k === "del" ? "Fshi" : k}>
-            {k === "del" ? <Delete size={24} strokeWidth={1.75} /> : k}
+            {k === "del" ? <Delete size={24} strokeWidth={1.5} /> : k}
           </button>
         ))}
       </div>
 
-      <DateSheet open={calendar} value={new Date(when)} onSelect={setDay} onClose={() => setCalendar(false)} />
-
       <button className={`${s.save} press`} disabled={!canSave} onClick={save} data-save>
         {cents === 0 ? "Shkruaj shumën" : !groupId ? "Zgjidh kategorinë" : editing ? "Ruaj ndryshimet" : `Ruaj ${label}`}
       </button>
+
+      <DateSheet open={calendar} value={new Date(when)} onSelect={setDay} onClose={() => setCalendar(false)} quick />
     </div>
   );
 }

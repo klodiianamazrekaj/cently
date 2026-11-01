@@ -10,10 +10,11 @@ type Props = {
   value: Date;
   onSelect: (d: Date) => void;
   onClose: () => void;
+  quick?: boolean; // show a "Dje" shortcut next to "Sot"
 };
 
 // Bottom sheet with a month calendar in Cently's style. Future days are disabled.
-export function DateSheet({ open, value, onSelect, onClose }: Props) {
+export function DateSheet({ open, value, onSelect, onClose, quick = false }: Props) {
   if (!open) return null;
   const today = new Date();
   return (
@@ -56,6 +57,7 @@ export function DateSheet({ open, value, onSelect, onClose }: Props) {
           }}
         />
         <div className={s.footer}>
+          {quick && <button className={`${s.todayBtn} press`} onClick={() => { onSelect(new Date(Date.now() - 86_400_000)); onClose(); }}>Dje</button>}
           <button className={`${s.todayBtn} press`} onClick={() => { onSelect(new Date()); onClose(); }}>Sot</button>
           <button className={`${s.done} press`} onClick={onClose}>Mbyll</button>
         </div>

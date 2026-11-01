@@ -48,6 +48,6 @@
 .disabled .dayBtn:active { transform: none; }
 
 .footer { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
-.todayBtn, .done { flex: 1; height: 50px; border-radius: var(--radius-pill); font-size: 16px; font-weight: 600; }
+.todayBtn, .done { flex: 1; height: 48px; border-radius: var(--radius-pill); font-size: 16px; font-weight: 600; }
 .todayBtn { background: var(--surface-sunken); }
 .done { background: var(--ink); color: var(--surface); }
