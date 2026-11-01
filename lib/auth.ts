@@ -117,7 +117,7 @@ export function authMessage(e: unknown): string {
   if (l.includes("expired") || l.includes("otp") || l.includes("token")) return "Kodi nuk është i saktë ose ka skaduar.";
   if (l.includes("failed to fetch") || l.includes("network") || l.includes("load failed")) return "Nuk ka lidhje me internetin. Provo përsëri.";
   if (l.includes("invalid email") || l.includes("unable to validate email") || l.includes("email address") && l.includes("invalid")) return "Email-i nuk duket i saktë.";
-  if (l.includes("signups not allowed") || l.includes("signup is disabled")) return "Regjistrimi i llogarive të reja është i çaktivizuar në Supabase.";
+  if (l.includes("signups not allowed") || l.includes("signup is disabled") || l.includes("signups are disabled") || l.includes("provider is disabled")) return "Regjistrimi me email është i çaktivizuar në Supabase. Ndize te Authentication > Sign In / Providers.";
   if (l.includes("could not find the function") || l.includes("does not exist") || l.includes("schema cache")) return "Databaza nuk është gati. Ekzekuto të dy migrimet në Supabase (SQL Editor).";
   if (l.includes("invite invalid") || l.includes("kodi nuk")) return "Kodi i ftesës nuk është i saktë ose ka skaduar.";
   if (l.includes("member already joined")) return "Ky person është lidhur tashmë.";
