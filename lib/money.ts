@@ -60,3 +60,23 @@ export function dayLabel(ts: number) {
 
 export const timeLabel = (ts: number) =>
   new Date(ts).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
+// Short date for chips: "Sot", "Dje", or "28 Tet".
+export function shortDate(ts: number) {
+  const d = new Date(ts);
+  const label = dayLabel(ts);
+  return label === "Sot" || label === "Dje" ? label : `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`;
+}
+
+// "2026-10-31" for <input type="date">, in local time.
+export function toDateInput(ts: number) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Same calendar day as `day`, keeping the time of day from `time`.
+export function onDay(day: Date, time = new Date()) {
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), time.getHours(), time.getMinutes(), time.getSeconds()).getTime();
+}
+
+export const sameDay = (a: number, b: number) => new Date(a).toDateString() === new Date(b).toDateString();

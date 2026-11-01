@@ -1,22 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Plus, Trash2, X } from "lucide-react";
-import { db, deleteTransaction, ensureSeed, type Category, type Transaction } from "@/lib/db";
-import { formatCents, monthName, monthRange, timeLabel } from "@/lib/money";
+import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { db, deleteTransaction, ensureSeed, restoreTransaction, type Category, type Transaction } from "@/lib/db";
+import { formatCents, monthName, monthRange, sameDay, timeLabel } from "@/lib/money";
 import { catColor } from "@/lib/categoryStyle";
 import { QuickAdd } from "@/components/QuickAdd";
 import { CatTile } from "@/components/CatTile";
 import { Amount } from "@/components/Amount";
+import { SwipeRow } from "@/components/SwipeRow";
 import s from "./page.module.css";
 
 const DAY_NAMES = ["E diel", "E hënë", "E martë", "E mërkurë", "E enjte", "E premte", "E shtunë"];
+const DAY = 86_400_000;
 
 export default function Home() {
-  const [adding, setAdding] = useState(false);
+  const [sheet, setSheet] = useState<{ editing: Transaction | null } | null>(null);
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
+  const [offset, setOffset] = useState(0); // 0 = this month, -1 = last month
+  const [undo, setUndo] = useState<{ id: string; key: number } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { ensureSeed(); }, []);
 
@@ -24,8 +29,11 @@ export default function Home() {
   const members = useMemo(() => [...(rawMembers ?? [])].sort((a, b) => a.color.localeCompare(b.color)), [rawMembers]);
   const accounts = useLiveQuery(() => db.accounts.toArray(), []) ?? [];
   const categories = useLiveQuery(() => db.categories.toArray(), []) ?? [];
+
   const now = new Date();
-  const { start, end } = monthRange(now);
+  const view = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const isCurrent = offset === 0;
+  const { start, end } = monthRange(view);
   const txs = useLiveQuery(
     () => db.transactions.where("occurredAt").between(start, end).reverse().filter((t) => !t.deletedAt).toArray(),
     [start, end]
@@ -43,15 +51,15 @@ export default function Home() {
   const earned = sum(txs.filter((t) => t.kind === "income"));
 
   // Daily totals for the chart
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const today = now.getDate();
+  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  const lastDay = isCurrent ? now.getDate() : daysInMonth; // days after this are in the future
   const perDay = useMemo(() => {
     const arr = new Array(daysInMonth).fill(0);
     for (const t of expenses) arr[new Date(t.occurredAt).getDate() - 1] += t.amountCents;
     return arr;
   }, [expenses, daysInMonth]);
   const maxDay = Math.max(...perDay, 1);
-  const average = Math.round(spent / today);
+  const average = Math.round(spent / lastDay);
 
   const byMember = members.map((m) => ({ m, cents: sum(expenses.filter((t) => t.paidByMember === m.id)) }));
 
@@ -72,12 +80,13 @@ export default function Home() {
   const visible = day ? txs.filter((t) => new Date(t.occurredAt).getDate() === day) : txs;
   const groups = useMemo(() => {
     const out: { key: number; label: string; total: number; items: Transaction[] }[] = [];
+    const nowTs = Date.now();
     for (const t of visible) {
       const d = new Date(t.occurredAt);
       const key = d.getDate();
       let g = out[out.length - 1];
       if (!g || g.key !== key) {
-        const label = key === today ? "Sot" : key === today - 1 ? "Dje" : `${DAY_NAMES[d.getDay()]}, ${key}`;
+        const label = sameDay(t.occurredAt, nowTs) ? "Sot" : sameDay(t.occurredAt, nowTs - DAY) ? "Dje" : `${DAY_NAMES[d.getDay()]}, ${key}`;
         g = { key, label, total: 0, items: [] };
         out.push(g);
       }
@@ -85,14 +94,35 @@ export default function Home() {
       if (t.kind === "expense") g.total += t.amountCents;
     }
     return out;
-  }, [visible, today]);
+  }, [visible]);
+
+  const changeMonth = (delta: number) => {
+    setOffset((o) => Math.min(0, o + delta));
+    setDay(null);
+    setOpenRow(null);
+  };
+
+  // After saving, show the month the expense belongs to (e.g. yesterday was last month).
+  const onSaved = (ts: number) => {
+    const d = new Date(ts);
+    setOffset((d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth());
+  };
+
+  const remove = (id: string) => {
+    deleteTransaction(id);
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setUndo({ id, key: Date.now() });
+    undoTimer.current = setTimeout(() => setUndo(null), 4500);
+  };
 
   const heroSub = day
-    ? `${day} ${monthName(now).toLowerCase()}: ${formatCents(perDay[day - 1])}`
-    : `Sot ${formatCents(perDay[today - 1])} · mesatarisht ${formatCents(average)} në ditë`;
+    ? `${day} ${monthName(view).toLowerCase()}: ${formatCents(perDay[day - 1])}`
+    : isCurrent
+      ? `Sot ${formatCents(perDay[lastDay - 1])} · mesatarisht ${formatCents(average)} në ditë`
+      : `Mesatarisht ${formatCents(average)} në ditë`;
 
   return (
-    <main className={s.main}>
+    <main className={s.main} onClick={() => openRow && setOpenRow(null)}>
       <header className={`${s.top} rise`}>
         <div className={s.couple}>
           <div className={s.avatars}>
@@ -102,11 +132,15 @@ export default function Home() {
           </div>
           <span className={s.coupleName}>{members.map((m) => m.name).join(" & ")}</span>
         </div>
-        <span className={s.monthPill}>{monthName(now)} {now.getFullYear()}</span>
+        <div className={s.monthNav}>
+          <button className="press" onClick={() => changeMonth(-1)} aria-label="Muaji i kaluar"><ChevronLeft size={18} strokeWidth={2} /></button>
+          <span className={s.monthLabel}>{monthName(view)}{view.getFullYear() !== now.getFullYear() ? ` ${view.getFullYear()}` : ""}</span>
+          <button className="press" onClick={() => changeMonth(1)} disabled={isCurrent} aria-label="Muaji tjetër"><ChevronRight size={18} strokeWidth={2} /></button>
+        </div>
       </header>
 
-      <section className={`${s.hero} rise`} style={{ animationDelay: "40ms" }}>
-        <p className={s.heroLabel}>Shpenzuar këtë muaj</p>
+      <section key={offset} className={`${s.hero} rise`} style={{ animationDelay: "40ms" }}>
+        <p className={s.heroLabel}>{isCurrent ? "Shpenzuar këtë muaj" : `Shpenzuar në ${monthName(view).toLowerCase()}`}</p>
         <Amount cents={spent} size={56} animate />
         <p className={s.heroSub}>{heroSub}</p>
         {earned > 0 && !day && (
@@ -118,8 +152,8 @@ export default function Home() {
         <div className={s.chart} role="group" aria-label="Shpenzimet sipas ditëve">
           {perDay.map((c, i) => {
             const d = i + 1;
-            const future = d > today;
-            const selected = day === d || (!day && d === today);
+            const future = d > lastDay;
+            const selected = day === d || (!day && isCurrent && d === lastDay);
             return (
               <button
                 key={d}
@@ -183,19 +217,21 @@ export default function Home() {
 
       <section className={`${s.section} rise`} style={{ animationDelay: "160ms" }}>
         <div className={s.h2Row}>
-          <h2 className={s.h2}>{day ? `${day} ${monthName(now)}` : "Lëvizjet"}</h2>
-          {day && (
+          <h2 className={s.h2}>{day ? `${day} ${monthName(view)}` : "Lëvizjet"}</h2>
+          {day ? (
             <button className={`${s.clear} press`} onClick={() => setDay(null)}>
               <X size={14} strokeWidth={2} /> Të gjitha
             </button>
-          )}
+          ) : txs.length > 0 ? (
+            <span className={s.hint}>Rrëshqit majtas për të ndryshuar</span>
+          ) : null}
         </div>
 
         {groups.length === 0 && (
           <div className={s.empty}>
             <CatTile icon="wallet" size={56} />
-            <p className={s.emptyTitle}>{day ? "Asnjë shpenzim këtë ditë" : "Asnjë shpenzim ende"}</p>
-            <p>Shtyp butonin poshtë dhe shto kafen e parë.</p>
+            <p className={s.emptyTitle}>{day ? "Asnjë shpenzim këtë ditë" : isCurrent ? "Asnjë shpenzim ende" : "Asnjë shpenzim këtë muaj"}</p>
+            {isCurrent && <p>Shtyp butonin poshtë dhe shto kafen e parë.</p>}
           </div>
         )}
 
@@ -205,31 +241,33 @@ export default function Home() {
               <span>{g.label}</span>
               <span className="num">{formatCents(g.total)}</span>
             </div>
-            <ul className={s.card}>
+            <ul className={s.card} onClick={(e) => e.stopPropagation()}>
               {g.items.map((t) => {
                 const c = t.categoryId ? catById.get(t.categoryId) : undefined;
                 const grp = topGroup(t.categoryId);
                 const m = t.paidByMember ? memberById.get(t.paidByMember) : undefined;
                 const acc = accounts.find((a) => a.id === t.accountId);
-                const open = openRow === t.id;
                 return (
                   <li key={t.id}>
-                    <button className={s.tx} onClick={() => setOpenRow(open ? null : t.id)}>
-                      <CatTile icon={grp?.icon} size={40} />
-                      <span className={s.txText}>
-                        <span className={s.txName}>{t.note || c?.name || "Pa kategori"}</span>
-                        <span className={s.txSub}>
-                          {m && <i className={s.dot} data-color={m.color} />}
-                          {[m?.name, t.note ? c?.name : null, acc?.name, timeLabel(t.occurredAt)].filter(Boolean).join(" · ")}
+                    <SwipeRow
+                      open={openRow === t.id}
+                      onOpenChange={(o) => setOpenRow(o ? t.id : null)}
+                      onTap={() => setSheet({ editing: t })}
+                      onEdit={() => setSheet({ editing: t })}
+                      onDelete={() => remove(t.id)}
+                    >
+                      <div className={s.tx}>
+                        <CatTile icon={grp?.icon} size={40} />
+                        <span className={s.txText}>
+                          <span className={s.txName}>{t.note || c?.name || "Pa kategori"}</span>
+                          <span className={s.txSub}>
+                            {m && <i className={s.dot} data-color={m.color} />}
+                            {[m?.name, t.note ? c?.name : null, acc?.name, timeLabel(t.occurredAt)].filter(Boolean).join(" · ")}
+                          </span>
                         </span>
-                      </span>
-                      <Amount cents={t.amountCents} size={16} sign={t.kind === "income" ? "+" : undefined} className={t.kind === "income" ? s.inc : ""} />
-                    </button>
-                    {open && (
-                      <button className={s.delete} onClick={() => { deleteTransaction(t.id); setOpenRow(null); }}>
-                        <Trash2 size={16} strokeWidth={1.75} /> Fshi
-                      </button>
-                    )}
+                        <Amount cents={t.amountCents} size={16} sign={t.kind === "income" ? "+" : undefined} className={t.kind === "income" ? s.inc : ""} />
+                      </div>
+                    </SwipeRow>
                   </li>
                 );
               })}
@@ -239,12 +277,36 @@ export default function Home() {
       </section>
 
       <div className={s.dock}>
-        <button className={`${s.add} press`} onClick={() => setAdding(true)}>
-          <Plus size={22} strokeWidth={2.25} /> Shto shpenzim
-        </button>
+        {undo ? (
+          <div key={undo.key} className={s.toast} role="status">
+            <span>Shpenzimi u fshi</span>
+            <button
+              className="press"
+              onClick={() => {
+                restoreTransaction(undo.id);
+                setUndo(null);
+                if (undoTimer.current) clearTimeout(undoTimer.current);
+              }}
+            >
+              Zhbëj
+            </button>
+          </div>
+        ) : (
+          <button className={`${s.add} press`} onClick={() => setSheet({ editing: null })}>
+            <Plus size={22} strokeWidth={2.25} /> Shto shpenzim
+          </button>
+        )}
       </div>
 
-      <QuickAdd open={adding} onClose={() => setAdding(false)} members={members} accounts={accounts} categories={categories} />
+      <QuickAdd
+        open={!!sheet}
+        editing={sheet?.editing ?? null}
+        onClose={() => setSheet(null)}
+        onSaved={onSaved}
+        members={members}
+        accounts={accounts}
+        categories={categories}
+      />
     </main>
   );
 }

@@ -123,3 +123,11 @@ export async function addTransaction(t: Omit<Transaction, "id" | "createdAt" | "
 export async function deleteTransaction(id: string) {
   await db.transactions.update(id, { deletedAt: Date.now(), updatedAt: Date.now(), synced: 0 });
 }
+
+export async function updateTransaction(id: string, patch: Partial<Omit<Transaction, "id" | "createdAt">>) {
+  await db.transactions.update(id, { ...patch, updatedAt: Date.now(), synced: 0 });
+}
+
+export async function restoreTransaction(id: string) {
+  await db.transactions.update(id, { deletedAt: null, updatedAt: Date.now(), synced: 0 });
+}
