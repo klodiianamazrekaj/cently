@@ -93,7 +93,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
           <Field label="Emri" value={name} onChange={setName} autoComplete="given-name" placeholder="Klodiana" autoFocus />
           <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="emri@shembull.com" />
           <PasswordField label="Fjalëkalimi" value={password} onChange={setPassword} autoComplete="new-password" hint={password && !pwOk ? "Të paktën 8 shkronja" : undefined} />
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || !name.trim() || !email.includes("@") || !pwOk}>
             {busy ? "Duke krijuar…" : "Krijo llogarinë"}
           </button>
@@ -114,7 +114,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
           <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="emri@shembull.com" autoFocus />
           <PasswordField label="Fjalëkalimi" value={password} onChange={setPassword} autoComplete="current-password" />
           <button type="button" className={s.forgot} onClick={() => go("forgot")}>Ke harruar fjalëkalimin?</button>
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || !email.includes("@") || !password}>{busy ? "Duke hyrë…" : "Hyr"}</button>
           {!onCancel && <p className={s.switch}>S&apos;ke llogari? <button type="button" onClick={() => go("signup")}>Krijo një</button></p>}
         </form>
@@ -136,7 +136,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
             aria-label="Kodi"
             autoFocus
           />
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           {notice && <p className={s.notice}>{notice}</p>}
           <button className={`${s.primary} press`} disabled={busy || code.length < 6}>{busy ? "Duke kontrolluar…" : "Konfirmo"}</button>
           <button type="button" className={`${s.ghost} press`} disabled={busy || !password} onClick={() => run(async () => {
@@ -153,7 +153,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
           <h1 className={s.h1}>Rivendos fjalëkalimin</h1>
           <p className={s.lead}>Shkruaj email-in dhe do të të dërgojmë një kod.</p>
           <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" inputMode="email" placeholder="emri@shembull.com" autoFocus />
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || !email.includes("@")}>{busy ? "Duke dërguar…" : "Dërgo kodin"}</button>
         </form>
       )}
@@ -174,7 +174,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
             autoFocus
           />
           <PasswordField label="Fjalëkalimi i ri" value={newPw} onChange={setNewPw} autoComplete="new-password" hint={newPw && newPw.length < 8 ? "Të paktën 8 shkronja" : undefined} />
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || code.length < 6 || newPw.length < 8}>{busy ? "Duke ruajtur…" : "Ruaj dhe hyr"}</button>
         </form>
       )}
@@ -184,7 +184,7 @@ export function AuthFlow({ initial = "welcome", onDone, onCancel }: Props) {
           <h1 className={s.h1}>Fjalëkalim i ri</h1>
           <p className={s.lead}>Zgjidh fjalëkalimin e ri për llogarinë tënde.</p>
           <PasswordField label="Fjalëkalimi i ri" value={newPw} onChange={setNewPw} autoComplete="new-password" hint={newPw && newPw.length < 8 ? "Të paktën 8 shkronja" : undefined} />
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || newPw.length < 8}>{busy ? "Duke ruajtur…" : "Ruaj"}</button>
         </form>
       )}

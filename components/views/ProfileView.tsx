@@ -21,7 +21,7 @@ export function ProfileView() {
   const [relogin, setRelogin] = useState(false);
 
   const me = household ? lookups.memberById.get(household.memberId) : undefined;
-  const name = me?.name ?? displayName(session) ?? "Ti";
+  const name = me?.name || displayName(session) || "Ti";
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setError(null);
@@ -39,13 +39,17 @@ export function ProfileView() {
 
       <div className={s.card}>
         <div className={s.profileCard}>
-          <span className={s.bigAv} data-color={me?.color ?? "blue"}>{name.charAt(0) || "?"}</span>
+          <span className={s.bigAv} data-color={me?.color ?? "blue"}>{name.charAt(0).toUpperCase() || "T"}</span>
           <div className={s.grow}>
             <div className={s.name}>{name}</div>
             <div className={s.muted}>{session?.user.email ?? (supabase ? "Pa hyrë" : "Vetëm në këtë telefon")}</div>
           </div>
         </div>
       </div>
+
+      {!supabase && (
+        <p className={s.localNote}>Shpenzimet ruhen vetëm në këtë telefon. Kur të lidhet llogaria, ato sinkronizohen me partnerin.</p>
+      )}
 
       {supabase && !session && household && (
         <button className={`${s.reloginCard} press`} onClick={() => setRelogin(true)}>
@@ -120,7 +124,7 @@ export function ProfileView() {
         </>
       )}
 
-      {error && <p className={s.error}>{error}</p>}
+      {error && <p className={s.error} role="alert">{error}</p>}
 
       {supabase && (session || household) && !confirm && (
         <button className={`${s.signOut} press`} disabled={busy} onClick={startSignOut}>

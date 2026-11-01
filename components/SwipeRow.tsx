@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import s from "./SwipeRow.module.css";
 
 const ACTIONS_W = 152; // two buttons of 76px
+export const SWIPED_KEY = "cently.swiped";
 
 type Props = {
   open: boolean;
@@ -19,6 +20,9 @@ type Props = {
 export function SwipeRow({ open, onOpenChange, onTap, onEdit, onDelete, children }: Props) {
   const [x, setX] = useState(0);
   const [dragging, setDragging] = useState(false);
+  // Actions stay hidden at rest so their colour never shows at the rounded corners.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => { if (x < 0) setRevealed(true); }, [x]);
   const g = useRef<{ startX: number; startY: number; base: number; axis: "x" | "y" | null; moved: boolean } | null>(null);
 
   // Follow the open state when it changes from outside (another row opened, tap elsewhere).
@@ -61,6 +65,10 @@ export function SwipeRow({ open, onOpenChange, onTap, onEdit, onDelete, children
       setX(shouldOpen ? -ACTIONS_W : 0);
       onOpenChange(shouldOpen);
       if (shouldOpen && navigator.vibrate) navigator.vibrate(8);
+      if (shouldOpen) {
+        try { localStorage.setItem(SWIPED_KEY, "1"); } catch {}
+        window.dispatchEvent(new Event(SWIPED_KEY));
+      }
       return;
     }
     if (st.axis === null) {
@@ -72,7 +80,7 @@ export function SwipeRow({ open, onOpenChange, onTap, onEdit, onDelete, children
 
   return (
     <div className={s.wrap}>
-      <div className={s.actions} aria-hidden={!open}>
+      <div className={s.actions} aria-hidden={!open} style={{ visibility: revealed ? "visible" : "hidden" }}>
         <button className={s.edit} onClick={() => { onOpenChange(false); onEdit(); }} tabIndex={open ? 0 : -1}>
           <Pencil size={18} strokeWidth={2} />
           <span>Ndrysho</span>
@@ -85,6 +93,7 @@ export function SwipeRow({ open, onOpenChange, onTap, onEdit, onDelete, children
       <div
         className={`${s.content} ${dragging ? s.dragging : ""}`}
         style={{ transform: `translate3d(${x}px,0,0)` }}
+        onTransitionEnd={(e) => { if (e.target === e.currentTarget && x === 0 && !dragging) setRevealed(false); }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

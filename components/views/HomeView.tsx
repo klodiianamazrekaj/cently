@@ -36,6 +36,9 @@ export function HomeView() {
     return arr;
   }, [expenses, daysInMonth]);
   const maxDay = Math.max(...perDay, 1);
+  const activeDays = perDay.filter((c) => c > 0).length;
+  const compact = activeDays < 3;
+  const barMax = compact ? 40 : 80;
 
   const byGroup = useMemo(() => {
     const map = new Map<string, { cat: Category; cents: number; count: number }>();
@@ -81,7 +84,7 @@ export function HomeView() {
             <Amount cents={earned} size={14} sign="+" /> të ardhura · {formatCents(Math.max(earned - spent, 0))} mbetur
           </p>
         )}
-        <div className={s.chart} role="group" aria-label="Shpenzimet sipas ditëve">
+        <div className={`${s.chart} ${compact ? s.chartCompact : ""}`} role="group" aria-label="Shpenzimet sipas ditëve">
           {perDay.map((c, i) => {
             const d = i + 1;
             const future = d > lastDay;
@@ -90,13 +93,16 @@ export function HomeView() {
               <button key={d} className={s.barSlot} onClick={() => !future && setDay(day === d ? null : d)} disabled={future} aria-label={`${d}: ${formatCents(c)}`}>
                 <span
                   className={`${s.bar} ${selected ? s.barOn : ""} ${future ? s.barFuture : ""}`}
-                  style={{ height: future ? 4 : Math.max(4, (c / maxDay) * 80), animationDelay: `${i * 12}ms` }}
+                  style={{ height: future ? 4 : Math.max(4, (c / maxDay) * barMax), animationDelay: `${i * 12}ms` }}
                 />
               </button>
             );
           })}
         </div>
         <div className={s.chartAxis}>{[1, 8, 15, 22, daysInMonth].map((d) => <span key={d} className="num">{d}</span>)}</div>
+        {compact && (
+          <p className={s.heroHint}>{activeDays === 0 ? "Shtoni shpenzimin e parë sot." : "Grafiku mbushet me çdo ditë që shtoni."}</p>
+        )}
       </section>
 
       <section className={`${s.people} rise`} style={{ animationDelay: "60ms" }}>

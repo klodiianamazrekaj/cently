@@ -1,7 +1,7 @@
 // Each top-level category gets one colour, chosen by its icon.
 const BY_ICON: Record<string, string> = {
   "shopping-basket": "green",
-  home: "sky",
+  home: "cyan",
   car: "amber",
   sparkles: "pink",
   ticket: "violet",

@@ -54,6 +54,8 @@
 .bar.barFuture { opacity: 0.06; }
 @keyframes grow { from { transform: scaleY(0); } }
 @media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
+.chart.chartCompact { height: 48px; margin-top: var(--space-4); }
+.heroHint { margin: var(--space-3) 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted); }
 .chartAxis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--ink-muted); }
 
 /* ---------- People ---------- */
@@ -122,6 +124,7 @@
 .search button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-pill); color: var(--ink-muted); }
 .chips { display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; margin: var(--space-3) calc(-1 * var(--space-4)) var(--space-4); padding: 0 var(--space-4); }
 .chips::-webkit-scrollbar { display: none; }
+.chips { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
 .chip {
   flex: none; height: 34px; padding: 0 14px; border-radius: var(--radius-pill); display: inline-flex; align-items: center; gap: 6px;
   background: var(--surface-raised); box-shadow: var(--shadow-card); font-size: 14px; font-weight: 500; color: var(--ink-muted);
@@ -205,3 +208,5 @@
 .reloginCard { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--lime); color: var(--on-lime); text-align: left; width: 100%; margin-top: var(--space-3); }
 .reloginCard span { flex: 1; display: flex; flex-direction: column; font-size: 13px; line-height: 18px; }
 .reloginCard b { font-size: 15px; }
+
+.localNote { margin: var(--space-3) var(--space-1) 0; font-size: 13px; line-height: 18px; color: var(--ink-muted); }

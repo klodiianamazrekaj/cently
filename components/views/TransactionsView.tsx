@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { formatCents, monthName } from "@/lib/money";
 import { groupByDay, monthInfo, sum, useMonthTxs } from "@/lib/data";
 import { Amount } from "@/components/Amount";
 import { useShell } from "@/components/shell/MainShell";
+import { SWIPED_KEY } from "@/components/SwipeRow";
 import { Empty, MonthNav, TxList } from "./parts";
 import s from "./ui.module.css";
 
@@ -18,6 +19,15 @@ export function TransactionsView() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<Kind>("all");
   const [who, setWho] = useState<string | null>(null);
+  const [swiped, setSwiped] = useState(true);
+
+  // The swipe hint shows until the first swipe, then never again on this phone.
+  useEffect(() => {
+    const read = () => { try { setSwiped(localStorage.getItem(SWIPED_KEY) === "1"); } catch { setSwiped(false); } };
+    read();
+    window.addEventListener(SWIPED_KEY, read);
+    return () => window.removeEventListener(SWIPED_KEY, read);
+  }, []);
 
   const spent = sum(txs.filter((t) => t.kind === "expense"));
   const earned = sum(txs.filter((t) => t.kind === "income"));
@@ -73,7 +83,7 @@ export function TransactionsView() {
       {filtering && filtered.length > 0 && (
         <p className={s.hint}>{filtered.length} rezultate · {formatCents(filteredTotal)} shpenzime</p>
       )}
-      {!filtering && filtered.length > 0 && <p className={s.hint}>Rrëshqit majtas mbi një shpenzim për ta ndryshuar ose fshirë.</p>}
+      {!filtering && !swiped && filtered.length > 0 && <p className={s.hint}>Rrëshqit majtas mbi një shpenzim për ta ndryshuar ose fshirë.</p>}
 
       {filtered.length === 0 ? (
         <Empty

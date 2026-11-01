@@ -94,7 +94,7 @@ export function Onboarding({ session }: { session: Session }) {
             <span className={s.choiceText}><b>Kam një kod ftese</b><span>Partneri të ka ftuar tashmë</span></span>
             <ChevronRight size={20} strokeWidth={2} />
           </button>
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
         </div>
       )}
 
@@ -110,7 +110,7 @@ export function Onboarding({ session }: { session: Session }) {
             <span className={s.label}>Emri i partnerit</span>
             <input className={s.input} value={partnerName} onChange={(e) => setPartnerName(e.target.value)} />
           </label>
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || members.length < 2 || !myName.trim() || !partnerName.trim()}>{busy ? "Duke krijuar…" : "Krijo shtëpinë"}</button>
         </form>
       )}
@@ -130,7 +130,7 @@ export function Onboarding({ session }: { session: Session }) {
             aria-label="Kodi i ftesës"
             autoFocus
           />
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.error} role="alert">{error}</p>}
           <button className={`${s.primary} press`} disabled={busy || code.length !== 6}>{busy ? "Duke u bashkuar…" : "Bashkohu"}</button>
         </form>
       )}
