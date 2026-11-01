@@ -83,3 +83,31 @@ input { font: inherit; color: inherit; }
   font-size: 11px; line-height: 14px; font-weight: 500;
   letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-muted);
 }
+
+/* Category colours: a soft tile background and a strong icon colour per category */
+:root {
+  --cat-green-bg: #dff3e4; --cat-green: #1f7a44;
+  --cat-sky-bg: #dfeeff;   --cat-sky: #1d5fb8;
+  --cat-amber-bg: #fff0d1; --cat-amber: #9a5b00;
+  --cat-pink-bg: #ffe3ef;  --cat-pink: #b02a68;
+  --cat-violet-bg: #ece6ff; --cat-violet: #5b3fc4;
+  --cat-lime-bg: #eef8d4;  --cat-lime: #4a7300;
+  --cat-gray-bg: #ededE8;  --cat-gray: #64656b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cat-green-bg: #12301d; --cat-green: #5fd38d;
+    --cat-sky-bg: #10243f;   --cat-sky: #6fb0ff;
+    --cat-amber-bg: #33240a; --cat-amber: #ffc04d;
+    --cat-pink-bg: #3a1226;  --cat-pink: #ff7ab3;
+    --cat-violet-bg: #231a45; --cat-violet: #a993ff;
+    --cat-lime-bg: #1e2a08;  --cat-lime: #c8f04a;
+    --cat-gray-bg: #1f2024;  --cat-gray: #9c9da3;
+  }
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+.press { transition: transform 0.15s ease; }
+.press:active { transform: scale(0.96); }

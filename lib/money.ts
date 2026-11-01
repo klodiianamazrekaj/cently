@@ -7,9 +7,32 @@ export function formatCents(cents: number, opts: { sign?: boolean } = {}) {
   return cents >= 0 ? `+${s}` : `−${s}`;
 }
 
-// Keypad input is kept as a digit string of cents: "150" means 1,50 €.
-export function digitsToCents(digits: string) {
-  return digits ? parseInt(digits, 10) : 0;
+// Keypad input is typed like on a calculator: "6" is 6 €, "6,5" is 6,50 €, "12,40" is 12,40 €.
+export function inputToCents(input: string) {
+  if (!input) return 0;
+  const [euros, cents = ""] = input.split(",");
+  return (parseInt(euros || "0", 10) * 100) + parseInt((cents + "00").slice(0, 2), 10);
+}
+
+// Applies one keypad press to the current input, keeping it valid.
+export function pressKey(input: string, key: string) {
+  if (key === "del") return input.slice(0, -1);
+  if (key === ",") {
+    if (input.includes(",")) return input;
+    return (input || "0") + ",";
+  }
+  const [euros, cents] = input.split(",");
+  if (cents !== undefined) return cents.length >= 2 ? input : input + key;
+  if (euros === "0") return key;
+  if (euros.length >= 6) return input;
+  return input + key;
+}
+
+// Splits an amount for display with smaller cents: { main: "1.284", cents: ",50" }
+export function splitCents(cents: number) {
+  const full = fmt.format(Math.abs(cents) / 100);
+  const i = full.lastIndexOf(",");
+  return { main: full.slice(0, i), cents: full.slice(i) };
 }
 
 export function monthKey(d = new Date()) {

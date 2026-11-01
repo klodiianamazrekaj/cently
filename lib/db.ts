@@ -83,11 +83,19 @@ const SEED: { group: string; icon: string; subs: string[] }[] = [
 
 export async function ensureSeed() {
   await db.transaction("rw", db.members, db.accounts, db.categories, async () => {
-    if ((await db.members.count()) > 0) return;
     const now = Date.now();
+    const existing = await db.members.toArray();
+    if (existing.length > 0) {
+      // Rename people created by earlier versions on this phone.
+      const RENAME: Record<string, string> = { Klodi: "Klodiana", "Unë": "Klodiana", Beni: "Benjamin", Partneri: "Benjamin" };
+      for (const m of existing) {
+        if (RENAME[m.name]) await db.members.update(m.id, { name: RENAME[m.name], updatedAt: now });
+      }
+      return;
+    }
     await db.members.bulkAdd([
-      { id: uid(), name: "Klodi", color: "blue", updatedAt: now },
-      { id: uid(), name: "Beni", color: "orange", updatedAt: now },
+      { id: uid(), name: "Klodiana", color: "blue", updatedAt: now },
+      { id: uid(), name: "Benjamin", color: "orange", updatedAt: now },
     ]);
     await db.accounts.bulkAdd([
       { id: uid(), name: "Cash", kind: "cash", ownerMemberId: null, updatedAt: now },
