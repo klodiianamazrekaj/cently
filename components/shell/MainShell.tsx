@@ -48,12 +48,13 @@ export function MainShell({ session }: { session: Session | null }) {
   const [sheet, setSheet] = useState<{ editing: Transaction | null } | null>(null);
   const [undo, setUndo] = useState<{ id: string; key: number } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const lookups = useLookups();
   const household = useLiveQuery(async () => (await getHousehold()) ?? null, []) ?? null;
 
   const setTab = useCallback((t: Tab) => {
     setTabState(t);
-    window.scrollTo({ top: 0 });
+    scroller.current?.scrollTo({ top: 0 });
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -84,14 +85,16 @@ export function MainShell({ session }: { session: Session | null }) {
 
   return (
     <ShellCtx.Provider value={value}>
-      <main className={s.main}>
-        <div key={tab} className={s.view}>
-          {tab === "home" && <HomeView />}
-          {tab === "tx" && <TransactionsView />}
-          {tab === "stats" && <StatsView />}
-          {tab === "profile" && <ProfileView />}
-        </div>
-      </main>
+      <div ref={scroller} className={s.scroller}>
+        <main className={s.main}>
+          <div key={tab} className={s.view}>
+            {tab === "home" && <HomeView />}
+            {tab === "tx" && <TransactionsView />}
+            {tab === "stats" && <StatsView />}
+            {tab === "profile" && <ProfileView />}
+          </div>
+        </main>
+      </div>
 
       {undo && (
         <div key={undo.key} className={s.toast} role="status">

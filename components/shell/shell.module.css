@@ -1,5 +1,11 @@
+.scroller {
+  /* The app scrolls inside this box, never the document. On iOS a fixed bar
+     jumps when the document height changes between tabs; a locked viewport keeps it put. */
+  position: fixed; inset: 0; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
 .main {
-  max-width: 480px; margin: 0 auto;
+  max-width: 480px; margin: 0 auto; min-height: 100%;
   padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--space-4) calc(env(safe-area-inset-bottom) + 112px);
 }
 .view { animation: fadeIn 0.28s cubic-bezier(0.2, 0.9, 0.3, 1); }
