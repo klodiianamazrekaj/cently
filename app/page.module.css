@@ -1,0 +1,80 @@
+.main {
+  max-width: 480px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--space-4) calc(env(safe-area-inset-bottom) + 120px);
+}
+
+.header { display: flex; align-items: center; justify-content: space-between; height: 32px; }
+.brand { display: flex; align-items: center; gap: 6px; font-size: 19px; font-weight: 650; letter-spacing: -0.04em; }
+
+.hero { padding: var(--space-6) 0 var(--space-5); }
+.total { font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.04em; margin-top: var(--space-1); }
+.incomeLine { margin-top: var(--space-2); font-size: 14px; color: var(--income); font-weight: 500; }
+.incomeLine span { color: var(--ink-muted); }
+
+.split { margin-top: var(--space-4); }
+.splitBar { display: flex; gap: 3px; height: 8px; }
+.splitBar span { border-radius: var(--radius-pill); min-width: 8px; }
+.splitBar span[data-color="blue"] { background: var(--blue); }
+.splitBar span[data-color="orange"] { background: var(--orange); }
+.splitLegend { display: flex; gap: var(--space-4); margin-top: var(--space-2); font-size: 13px; color: var(--ink-muted); }
+.splitLegend span { display: flex; align-items: center; gap: 6px; }
+.splitLegend i { width: 8px; height: 8px; border-radius: var(--radius-pill); }
+.splitLegend i[data-color="blue"] { background: var(--blue); }
+.splitLegend i[data-color="orange"] { background: var(--orange); }
+
+.card {
+  background: var(--surface-raised); border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+.cardTitle { margin: 0 0 var(--space-3); font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.groups { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.groupHead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; }
+.groupName { display: flex; align-items: center; gap: var(--space-2); }
+.bar { height: 6px; margin-top: 6px; background: var(--surface-sunken); border-radius: var(--radius-pill); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--ink); border-radius: var(--radius-pill); opacity: 0.85; }
+.bar span.barTop { background: var(--lime); opacity: 1; }
+
+.iconDot {
+  width: 32px; height: 32px; flex: none; border-radius: var(--radius-pill);
+  background: var(--surface-sunken); display: grid; place-items: center; color: var(--ink);
+}
+.groupName .iconDot { width: 26px; height: 26px; }
+
+.list { margin-top: var(--space-5); }
+.day { margin-bottom: var(--space-4); }
+.dayLabel { padding: 0 var(--space-1) var(--space-2); }
+.rows {
+  list-style: none; margin: 0; padding: 0;
+  background: var(--surface-raised); border-radius: var(--radius-md); box-shadow: var(--shadow-card); overflow: hidden;
+}
+.rows li + li { border-top: 1px solid var(--line); }
+.row { width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); text-align: left; }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rowName { font-weight: 500; }
+.rowSub { font-size: 13px; line-height: 18px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowRight { display: flex; align-items: center; gap: var(--space-2); }
+.rowAmount { font-size: 16px; font-weight: 600; }
+.rowAmount.inc { color: var(--income); }
+.payer {
+  width: 22px; height: 22px; border-radius: var(--radius-pill); display: grid; place-items: center;
+  font-size: 11px; font-weight: 600;
+}
+.payer[data-color="blue"] { background: var(--blue-soft); color: var(--blue); }
+.payer[data-color="orange"] { background: var(--orange-soft); color: var(--orange); }
+.delete {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 40px; color: var(--over); background: var(--over-soft); font-size: 14px; font-weight: 500;
+}
+
+.empty { text-align: center; color: var(--ink-muted); padding: var(--space-8) var(--space-4); }
+.empty p { margin: 0; }
+.emptyTitle { color: var(--ink); font-size: 17px; font-weight: 600; margin-bottom: var(--space-1) !important; }
+
+.fab {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + var(--space-5));
+  width: 64px; height: 64px; border-radius: var(--radius-pill);
+  background: var(--lime); color: var(--on-lime); box-shadow: var(--shadow-float);
+  display: grid; place-items: center; z-index: 10;
+}
+.fab:active { transform: translateX(-50%) scale(0.94); }
